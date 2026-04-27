@@ -1,8 +1,9 @@
-mod scan;
+mod lex;
+mod tokens;
 
 use std::{env, fs, path::Path, process::ExitCode};
 
-use crate::scan::Scanner;
+use crate::{lex::Lexer, tokens::TokenType};
 
 /// Runs Lox and returns an [`ExitCode`].
 fn main() -> ExitCode {
@@ -27,9 +28,14 @@ fn main() -> ExitCode {
 
 /// Interprets source code.
 fn interpret_source(source: &str) {
-    let mut scanner = Scanner::new(source);
+    let mut lexer = Lexer::new(source);
 
-    while let Some(char) = scanner.bump() {
-        println!("{char:?}");
+    loop {
+        let token = lexer.next_token();
+        println!("{token}");
+
+        if token.token_type() == TokenType::Eof {
+            break;
+        }
     }
 }
