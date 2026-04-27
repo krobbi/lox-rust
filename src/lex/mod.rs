@@ -30,6 +30,8 @@ impl<'src> Lexer<'src> {
     /// Returns the next [`TokenKind`]. This function returns [`None`] if a
     /// comment or error was encountered.
     fn next_token_kind(&mut self) -> Option<TokenKind> {
+        self.scanner.eat_while(is_char_whitespace);
+
         let Some(char) = self.scanner.bump() else {
             return Some(TokenKind::Eof);
         };
@@ -49,4 +51,9 @@ impl<'src> Lexer<'src> {
         #[expect(unreachable_code, reason = "more token kinds will be added later")]
         Some(kind)
     }
+}
+
+/// Returns [`true`] if a [`char`] is whitespace.
+const fn is_char_whitespace(char: char) -> bool {
+    matches!(char, '\t' | '\n' | '\r' | ' ')
 }
