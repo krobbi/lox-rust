@@ -39,7 +39,17 @@ macro_rules! define_token_kinds {
 
 define_token_kinds! {
     (Eof, "An end of source code marker.", "end of file"),
+    (OpenParen, "An opening parenthesis (`(`).", "an opening '('"),
+    (CloseParen, "A closing parenthesis (`)`).", "a closing ')'"),
+    (OpenBrace, "An opening brace (`{`).", "an opening '{'"),
+    (CloseBrace, "A closing brace (`}`).", "a closing '}'"),
+    (Comma, "A comma (`,`).", "','"),
+    (Dot, "A dot (`.`).", "'.'"),
+    (Minus, "A minus sign (`-`).", "'-'"),
+    (Plus, "A plus sign (`+`).", "'+'"),
+    (Semi, "A semicolon (`;`).", "';'"),
     (Slash, "A forward slash (`/`).", "'/'"),
+    (Star, "An asterisk (`*`).", "'*'"),
 }
 
 /// A lexical element of source code.

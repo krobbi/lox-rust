@@ -36,11 +36,16 @@ impl<'src> Lexer<'src> {
             return Some(TokenKind::Eof);
         };
 
-        #[expect(
-            clippy::single_match_else,
-            reason = "more token kinds will be added later"
-        )]
         let kind = match char {
+            '(' => TokenKind::OpenParen,
+            ')' => TokenKind::CloseParen,
+            '{' => TokenKind::OpenBrace,
+            '}' => TokenKind::CloseBrace,
+            ',' => TokenKind::Comma,
+            '.' => TokenKind::Dot,
+            '-' => TokenKind::Minus,
+            '+' => TokenKind::Plus,
+            ';' => TokenKind::Semi,
             '/' => {
                 if self.scanner.eat('/') {
                     self.scanner.eat_while(is_char_inline);
@@ -49,6 +54,7 @@ impl<'src> Lexer<'src> {
 
                 TokenKind::Slash
             }
+            '*' => TokenKind::Star,
             _ => {
                 eprintln!("Unexpected character {char:?}.");
                 return None;
