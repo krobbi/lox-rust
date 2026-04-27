@@ -20,6 +20,18 @@ impl<'src> Scanner<'src> {
         self.chars.next()
     }
 
+    /// Consumes the next [`char`] if it matches an expected [`char`]. This
+    /// function returns [`true`] if a [`char`] was consumed.
+    pub fn eat(&mut self, expected: char) -> bool {
+        let is_match = self.peek() == Some(expected);
+
+        if is_match {
+            self.bump();
+        }
+
+        is_match
+    }
+
     /// Repeatedly consumes the next [`char`] while it matches a predicate
     /// function.
     pub fn eat_while<F: Fn(char) -> bool>(&mut self, predicate: F) {

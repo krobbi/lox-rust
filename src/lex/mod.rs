@@ -37,20 +37,31 @@ impl<'src> Lexer<'src> {
         };
 
         #[expect(
-            unused_variables,
-            clippy::match_single_binding,
+            clippy::single_match_else,
             reason = "more token kinds will be added later"
         )]
         let kind = match char {
+            '/' => {
+                if self.scanner.eat('/') {
+                    self.scanner.eat_while(is_char_inline);
+                    return None;
+                }
+
+                TokenKind::Slash
+            }
             _ => {
                 eprintln!("Unexpected character {char:?}.");
                 return None;
             }
         };
 
-        #[expect(unreachable_code, reason = "more token kinds will be added later")]
         Some(kind)
     }
+}
+
+/// Returns [`true`] if a [`char`] is not a line feed.
+const fn is_char_inline(char: char) -> bool {
+    char != '\n'
 }
 
 /// Returns [`true`] if a [`char`] is whitespace.

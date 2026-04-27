@@ -39,6 +39,7 @@ macro_rules! define_token_kinds {
 
 define_token_kinds! {
     (Eof, "An end of source code marker.", "end of file"),
+    (Slash, "A forward slash (`/`).", "'/'"),
 }
 
 /// A lexical element of source code.
