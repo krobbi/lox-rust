@@ -94,4 +94,7 @@ pub enum Literal {
 
     /// A number.
     Number(f64),
+
+    /// A string.
+    String(Symbol),
 }

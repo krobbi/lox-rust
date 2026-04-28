@@ -57,6 +57,7 @@ impl<'src, 'sym> Lexer<'src, 'sym> {
         let kind = match char {
             c if is_char_word_start(c) => self.next_word(),
             c if is_char_digit(c) => self.next_number(),
+            '"' => self.next_string(),
             '(' => TokenKind::OpenParen,
             ')' => TokenKind::CloseParen,
             '{' => TokenKind::OpenBrace,
@@ -134,6 +135,22 @@ impl<'src, 'sym> Lexer<'src, 'sym> {
         self.number_from_lexeme()
     }
 
+    /// Returns the next string [`TokenKind`] after consuming its first
+    /// [`char`].
+    fn next_string(&mut self) -> TokenKind {
+        // HACK: Exclude opening quote from string value.
+        self.scanner.begin_lexeme();
+
+        self.scanner.eat_while(is_char_in_string);
+        let value = self.scanner.lexeme();
+
+        if !self.scanner.eat('"') {
+            eprintln!("Unterminated string.");
+        }
+
+        TokenKind::Literal(Literal::String(self.symbols.intern(value)))
+    }
+
     /// Returns [`true`] if the next [`char`] is a digit.
     fn is_digit_next(&self) -> bool {
         matches!(self.scanner.peek(), Some(c) if is_char_digit(c))
@@ -174,4 +191,9 @@ const fn is_char_word_continue(char: char) -> bool {
 /// Returns [`true`] if a [`char`] is a digit.
 const fn is_char_digit(char: char) -> bool {
     char.is_ascii_digit()
+}
+
+/// Returns [`true`] if a [`char`] is not a quote.
+const fn is_char_in_string(char: char) -> bool {
+    char != '"'
 }

@@ -9,6 +9,7 @@ impl Literal {
             Self::Nil => "value", // Looks better than "nil 'nil'".
             Self::Bool(_) => "bool",
             Self::Number(_) => "number",
+            Self::String(_) => "string",
         }
     }
 }
@@ -44,6 +45,7 @@ impl Display for Literal {
             Self::Nil => f.write_str("nil"),
             Self::Bool(value) => Display::fmt(value, f),
             Self::Number(value) => Display::fmt(value, f),
+            Self::String(symbol) => Display::fmt(symbol, f),
         }
     }
 }
