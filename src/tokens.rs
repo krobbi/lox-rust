@@ -2,17 +2,17 @@ use std::fmt::{self, Display, Formatter};
 
 /// Defines the set of [`TokenKind`]s.
 macro_rules! define_token_kinds {
-    {$(($name:ident, $doc:literal, $desc:literal)),* $(,)?} => {
+    {$(($name:ident$(($field:ty))?, $doc:literal, $desc:literal)),* $(,)?} => {
         /// A [`Token`]'s kind.
-        #[derive(Debug)]
+        #[derive(Clone, Copy, Debug)]
         pub enum TokenKind {$(
             #[doc = $doc]
-            $name
+            $name$(($field))?
         ),*}
 
         impl TokenKind {
             /// Returns the `TokenKind`'s [`TokenType`].
-            const fn token_type(&self) -> TokenType {
+            const fn token_type(self) -> TokenType {
                 match self {$(
                     Self::$name { .. } => TokenType::$name
                 ),*}
@@ -20,7 +20,7 @@ macro_rules! define_token_kinds {
         }
 
         /// A [`TokenKind`]'s discriminant type.
-        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
         pub enum TokenType {$(
             #[doc = $doc]
             $name
@@ -39,6 +39,7 @@ macro_rules! define_token_kinds {
 
 define_token_kinds! {
     (Eof, "An end of source code marker.", "end of file"),
+    (Literal(Literal), "A [`Literal`].", "a literal"),
     (OpenParen, "An opening parenthesis (`(`).", "an opening '('"),
     (CloseParen, "A closing parenthesis (`)`).", "a closing ')'"),
     (OpenBrace, "An opening brace (`{`).", "an opening '{'"),
@@ -79,6 +80,22 @@ impl Token {
     }
 }
 
+/// A value which can be represented with a single [`Token`].
+#[derive(Clone, Copy, Debug)]
+pub enum Literal {
+    /// A number.
+    Number(f64),
+}
+
+impl Literal {
+    /// Returns the `Literal`'s type name.
+    const fn type_name(self) -> &'static str {
+        match self {
+            Self::Number(_) => "number",
+        }
+    }
+}
+
 impl Display for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         Display::fmt(&self.kind, f)
@@ -87,11 +104,11 @@ impl Display for Token {
 
 impl Display for TokenKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        #[expect(
-            clippy::match_single_binding,
-            reason = "token types with fields will be added later"
-        )]
         match self {
+            Self::Literal(literal) => {
+                let type_name = literal.type_name();
+                write!(f, "{type_name} '{literal}'")
+            }
             _ => Display::fmt(&self.token_type(), f),
         }
     }
@@ -100,5 +117,13 @@ impl Display for TokenKind {
 impl Display for TokenType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str(self.description())
+    }
+}
+
+impl Display for Literal {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Number(value) => Display::fmt(value, f),
+        }
     }
 }

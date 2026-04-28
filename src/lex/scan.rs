@@ -4,6 +4,10 @@ use std::str::Chars;
 pub struct Scanner<'src> {
     /// The source code's [`Chars`].
     chars: Chars<'src>,
+
+    /// The string slice between the start of the current lexeme and the end of
+    /// source code.
+    rest: &'src str,
 }
 
 impl<'src> Scanner<'src> {
@@ -11,7 +15,30 @@ impl<'src> Scanner<'src> {
     pub fn new(source: &'src str) -> Self {
         Self {
             chars: source.chars(),
+            rest: source,
         }
+    }
+
+    /// Returns the current lexeme.
+    pub fn lexeme(&self) -> &'src str {
+        let length = self.rest.len() - self.chars.as_str().len();
+
+        #[expect(
+            clippy::string_slice,
+            reason = "length is always on a code point boundary"
+        )]
+        &self.rest[..length]
+    }
+
+    /// Begins a new lexeme.
+    pub fn begin_lexeme(&mut self) {
+        self.rest = self.chars.as_str();
+    }
+
+    /// Returns the next [`char`] without consuming it. This function returns
+    /// [`None`] if the `Scanner` is at the end of source code.
+    pub fn peek(&self) -> Option<char> {
+        self.chars.clone().next()
     }
 
     /// Consumes and returns the next [`char`]. This function returns [`None`]
@@ -40,11 +67,5 @@ impl<'src> Scanner<'src> {
         {
             self.bump();
         }
-    }
-
-    /// Returns the next [`char`] without consuming it. This function returns
-    /// [`None`] if the `Scanner` is at the end of source code.
-    fn peek(&self) -> Option<char> {
-        self.chars.clone().next()
     }
 }
