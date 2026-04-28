@@ -86,6 +86,12 @@ impl Token {
 /// A value which can be represented with a single [`Token`].
 #[derive(Clone, Copy, Debug)]
 pub enum Literal {
+    /// A nil value.
+    Nil,
+
+    /// A Boolean value.
+    Bool(bool),
+
     /// A number.
     Number(f64),
 }

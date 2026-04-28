@@ -102,8 +102,15 @@ impl<'src, 'sym> Lexer<'src, 'sym> {
     /// first [`char`].
     fn next_word(&mut self) -> TokenKind {
         self.scanner.eat_while(is_char_word_continue);
-        let symbol = self.symbols.intern(self.scanner.lexeme());
-        TokenKind::Ident(symbol)
+
+        // TODO: Consider using pre-interned symbols to check for keywords. Only
+        // do this if it improves performance.
+        match self.scanner.lexeme() {
+            "false" => TokenKind::Literal(Literal::Bool(false)),
+            "nil" => TokenKind::Literal(Literal::Nil),
+            "true" => TokenKind::Literal(Literal::Bool(true)),
+            name => TokenKind::Ident(self.symbols.intern(name)),
+        }
     }
 
     /// Returns the next number [`TokenKind`] after consuming its first

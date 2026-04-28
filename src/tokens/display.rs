@@ -6,6 +6,8 @@ impl Literal {
     /// Returns the `Literal`'s type name.
     const fn type_name(self) -> &'static str {
         match self {
+            Self::Nil => "value", // Looks better than "nil 'nil'".
+            Self::Bool(_) => "bool",
             Self::Number(_) => "number",
         }
     }
@@ -39,6 +41,8 @@ impl Display for TokenType {
 impl Display for Literal {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Nil => f.write_str("nil"),
+            Self::Bool(value) => Display::fmt(value, f),
             Self::Number(value) => Display::fmt(value, f),
         }
     }
