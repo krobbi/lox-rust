@@ -30,6 +30,16 @@ impl<'src> Lexer<'src> {
     /// Returns the next [`TokenKind`]. This function returns [`None`] if a
     /// comment or error was encountered.
     fn next_token_kind(&mut self) -> Option<TokenKind> {
+        macro_rules! read_digraph {
+            ($short:ident, $long:ident) => {
+                if self.scanner.eat('=') {
+                    TokenKind::$long
+                } else {
+                    TokenKind::$short
+                }
+            };
+        }
+
         self.scanner.eat_while(is_char_whitespace);
 
         let Some(char) = self.scanner.bump() else {
@@ -55,6 +65,10 @@ impl<'src> Lexer<'src> {
                 TokenKind::Slash
             }
             '*' => TokenKind::Star,
+            '!' => read_digraph!(Bang, BangEquals),
+            '=' => read_digraph!(Equals, EqualsEquals),
+            '>' => read_digraph!(Greater, GreaterEquals),
+            '<' => read_digraph!(Less, LessEquals),
             _ => {
                 eprintln!("Unexpected character {char:?}.");
                 return None;

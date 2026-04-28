@@ -50,6 +50,14 @@ define_token_kinds! {
     (Semi, "A semicolon (`;`).", "';'"),
     (Slash, "A forward slash (`/`).", "'/'"),
     (Star, "An asterisk (`*`).", "'*'"),
+    (Bang, "An exclamation mark (`!`).", "'!'"),
+    (BangEquals, "An exclamation mark and equals sign (`!=`).", "'!='"),
+    (Equals, "An equals sign (`=`).", "'='"),
+    (EqualsEquals, "A double equals sign (`==`).", "'=='"),
+    (Greater, "A greater than symbol (`>`).", "'>'"),
+    (GreaterEquals, "A greater than symbol and equals sign (`>=`).", "'>='"),
+    (Less, "A less than symbol (`<`).", "'<'"),
+    (LessEquals, "A less than symbol and equals sign (`<=`).", "'<='"),
 }
 
 /// A lexical element of source code.
