@@ -62,6 +62,19 @@ define_token_kinds! {
     (GreaterEquals, "A greater than symbol and equals sign (`>=`).", "'>='"),
     (Less, "A less than symbol (`<`).", "'<'"),
     (LessEquals, "A less than symbol and equals sign (`<=`).", "'<='"),
+    (And, "An `and` keyword.", "keyword 'and'"),
+    (Class, "A `class` keyword.", "keyword 'class'"),
+    (Else, "An `else` keyword.", "keyword 'else'"),
+    (For, "A `for` keyword.", "keyword 'for'"),
+    (Fun, "A `fun` keyword.", "keyword 'fun'"),
+    (If, "An `if` keyword.", "keyword 'if'"),
+    (Or, "An `or` keyword.", "keyword 'or'"),
+    (Print, "A `print` keyword.", "keyword 'print'"),
+    (Return, "A `return` keyword.", "keyword 'return'"),
+    (Super, "A `super` keyword.", "keyword 'super'"),
+    (This, "A `this` keyword.", "keyword 'this'"),
+    (Var, "A `var` keyword.", "keyword 'var'"),
+    (While, "A `while` keyword.", "keyword 'while'"),
 }
 
 /// A lexical element of source code.

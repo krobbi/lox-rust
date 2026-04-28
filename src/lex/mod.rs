@@ -107,9 +107,22 @@ impl<'src, 'sym> Lexer<'src, 'sym> {
         // TODO: Consider using pre-interned symbols to check for keywords. Only
         // do this if it improves performance.
         match self.scanner.lexeme() {
+            "and" => TokenKind::And,
+            "class" => TokenKind::Class,
+            "else" => TokenKind::Else,
             "false" => TokenKind::Literal(Literal::Bool(false)),
+            "for" => TokenKind::For,
+            "fun" => TokenKind::Fun,
+            "if" => TokenKind::If,
             "nil" => TokenKind::Literal(Literal::Nil),
+            "or" => TokenKind::Or,
+            "print" => TokenKind::Print,
+            "return" => TokenKind::Return,
+            "super" => TokenKind::Super,
+            "this" => TokenKind::This,
             "true" => TokenKind::Literal(Literal::Bool(true)),
+            "var" => TokenKind::Var,
+            "while" => TokenKind::While,
             name => TokenKind::Ident(self.symbols.intern(name)),
         }
     }
