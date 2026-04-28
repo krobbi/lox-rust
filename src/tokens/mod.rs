@@ -1,4 +1,6 @@
-use std::fmt::{self, Display, Formatter};
+mod display;
+
+use crate::symbols::Symbol;
 
 /// Defines the set of [`TokenKind`]s.
 macro_rules! define_token_kinds {
@@ -40,6 +42,7 @@ macro_rules! define_token_kinds {
 define_token_kinds! {
     (Eof, "An end of source code marker.", "end of file"),
     (Literal(Literal), "A [`Literal`].", "a literal"),
+    (Ident(Symbol), "An identifier.", "an identifier"),
     (OpenParen, "An opening parenthesis (`(`).", "an opening '('"),
     (CloseParen, "A closing parenthesis (`)`).", "a closing ')'"),
     (OpenBrace, "An opening brace (`{`).", "an opening '{'"),
@@ -85,45 +88,4 @@ impl Token {
 pub enum Literal {
     /// A number.
     Number(f64),
-}
-
-impl Literal {
-    /// Returns the `Literal`'s type name.
-    const fn type_name(self) -> &'static str {
-        match self {
-            Self::Number(_) => "number",
-        }
-    }
-}
-
-impl Display for Token {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        Display::fmt(&self.kind, f)
-    }
-}
-
-impl Display for TokenKind {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Literal(literal) => {
-                let type_name = literal.type_name();
-                write!(f, "{type_name} '{literal}'")
-            }
-            _ => Display::fmt(&self.token_type(), f),
-        }
-    }
-}
-
-impl Display for TokenType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str(self.description())
-    }
-}
-
-impl Display for Literal {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Number(value) => Display::fmt(value, f),
-        }
-    }
 }

@@ -1,20 +1,27 @@
 mod scan;
 
-use crate::tokens::{Literal, Token, TokenKind};
+use crate::{
+    symbols::SymbolTable,
+    tokens::{Literal, Token, TokenKind},
+};
 
 use self::scan::Scanner;
 
 /// A structure which reads a stream of [`Token`]s from source code.
-pub struct Lexer<'src> {
+pub struct Lexer<'src, 'sym> {
     /// The [`Scanner`].
     scanner: Scanner<'src>,
+
+    /// The [`SymbolTable`].
+    symbols: &'sym mut SymbolTable,
 }
 
-impl<'src> Lexer<'src> {
-    /// Creates a new `Lexer` from source code.
-    pub fn new(source: &'src str) -> Self {
+impl<'src, 'sym> Lexer<'src, 'sym> {
+    /// Creates a new `Lexer` from source code and a [`SymbolTable`].
+    pub fn new(source: &'src str, symbols: &'sym mut SymbolTable) -> Self {
         Self {
             scanner: Scanner::new(source),
+            symbols,
         }
     }
 
@@ -48,6 +55,7 @@ impl<'src> Lexer<'src> {
         };
 
         let kind = match char {
+            c if is_char_word_start(c) => self.next_word(),
             c if is_char_digit(c) => self.next_number(),
             '(' => TokenKind::OpenParen,
             ')' => TokenKind::CloseParen,
@@ -90,6 +98,14 @@ impl<'src> Lexer<'src> {
         Some(kind)
     }
 
+    /// Returns the next keyword or identifier [`TokenKind`] after consuming its
+    /// first [`char`].
+    fn next_word(&mut self) -> TokenKind {
+        self.scanner.eat_while(is_char_word_continue);
+        let symbol = self.symbols.intern(self.scanner.lexeme());
+        TokenKind::Ident(symbol)
+    }
+
     /// Returns the next number [`TokenKind`] after consuming its first
     /// [`char`].
     fn next_number(&mut self) -> TokenKind {
@@ -126,9 +142,11 @@ impl<'src> Lexer<'src> {
     }
 }
 
-/// Returns [`true`] if a [`char`] is a digit.
-const fn is_char_digit(char: char) -> bool {
-    char.is_ascii_digit()
+/// Returns [`true`] if a [`char`] is whitespace.
+const fn is_char_whitespace(char: char) -> bool {
+    // NOTE: `char::is_ascii_whitespace` includes form feed, which is not
+    // specified as whitespace in Lox.
+    matches!(char, '\t' | '\n' | '\r' | ' ')
 }
 
 /// Returns [`true`] if a [`char`] is not a line feed.
@@ -136,9 +154,17 @@ const fn is_char_inline(char: char) -> bool {
     char != '\n'
 }
 
-/// Returns [`true`] if a [`char`] is whitespace.
-const fn is_char_whitespace(char: char) -> bool {
-    // NOTE: `char::is_ascii_whitespace` includes form feed, which is not
-    // specified as whitespace in Lox.
-    matches!(char, '\t' | '\n' | '\r' | ' ')
+/// Returns [`true`] if a [`char`] is a keyword or identifier start.
+const fn is_char_word_start(char: char) -> bool {
+    char.is_ascii_alphabetic() || char == '_'
+}
+
+/// Returns [`true`] if a [`char`] is a keyword or identifier continuation.
+const fn is_char_word_continue(char: char) -> bool {
+    char.is_ascii_alphanumeric() || char == '_'
+}
+
+/// Returns [`true`] if a [`char`] is a digit.
+const fn is_char_digit(char: char) -> bool {
+    char.is_ascii_digit()
 }

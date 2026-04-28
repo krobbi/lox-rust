@@ -1,4 +1,5 @@
 mod lex;
+mod symbols;
 mod tokens;
 
 use std::{
@@ -8,7 +9,7 @@ use std::{
     process::ExitCode,
 };
 
-use crate::{lex::Lexer, tokens::TokenType};
+use crate::{lex::Lexer, symbols::SymbolTable, tokens::TokenType};
 
 /// Runs Lox and returns an [`ExitCode`].
 fn main() -> ExitCode {
@@ -76,7 +77,8 @@ fn interpret_file(path: &Path) -> Result<(), ()> {
 
 /// Interprets source code.
 fn interpret_source(source: &str) {
-    let mut lexer = Lexer::new(source);
+    let mut symbols = SymbolTable::new();
+    let mut lexer = Lexer::new(source, &mut symbols);
 
     loop {
         let token = lexer.next_token();
