@@ -14,7 +14,7 @@ use crate::{
     lex::Lexer,
     log::{Render as _, RenderContext},
     symbols::SymbolTable,
-    tokens::{Literal, TokenKind, TokenType},
+    tokens::TokenType,
 };
 
 /// Runs Lox and returns an [`ExitCode`].
@@ -89,23 +89,17 @@ fn interpret_source(source: &str) {
 
     loop {
         let token = lexer.next_token();
+        let is_eof = token.token_type() == TokenType::Eof;
+        tokens.push(token);
 
-        if token.token_type() == TokenType::Eof {
+        if is_eof {
             break;
         }
-
-        tokens.push(token);
     }
 
     let ctx = RenderContext::new(&symbols);
 
     for token in tokens {
-        match token.kind() {
-            TokenKind::Literal(Literal::String(symbol)) => {
-                println!("string {:?}", symbol.display(ctx).to_string());
-            }
-            TokenKind::Ident(symbol) => println!("identifier '{}'", symbol.display(ctx)),
-            _ => println!("{token}"),
-        }
+        println!("{}", token.display(ctx));
     }
 }

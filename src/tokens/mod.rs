@@ -1,4 +1,4 @@
-mod display;
+mod render;
 
 use crate::symbols::Symbol;
 
@@ -88,11 +88,6 @@ impl Token {
     /// Creates a new `Token` from its [`TokenKind`].
     pub const fn new(kind: TokenKind) -> Self {
         Self { kind }
-    }
-
-    /// Returns the `Token`'s [`TokenKind`].
-    pub const fn kind(&self) -> TokenKind {
-        self.kind
     }
 
     /// Returns the `Token`'s [`TokenType`].
