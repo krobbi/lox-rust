@@ -1,4 +1,5 @@
 mod lex;
+mod log;
 mod symbols;
 mod tokens;
 
@@ -11,6 +12,7 @@ use std::{
 
 use crate::{
     lex::Lexer,
+    log::{Render as _, RenderContext},
     symbols::SymbolTable,
     tokens::{Literal, TokenKind, TokenType},
 };
@@ -95,12 +97,14 @@ fn interpret_source(source: &str) {
         tokens.push(token);
     }
 
+    let ctx = RenderContext::new(&symbols);
+
     for token in tokens {
         match token.kind() {
             TokenKind::Literal(Literal::String(symbol)) => {
-                println!("string {:?}", symbols.string(symbol));
+                println!("string {:?}", symbol.display(ctx).to_string());
             }
-            TokenKind::Ident(symbol) => println!("identifier '{}'", symbols.string(symbol)),
+            TokenKind::Ident(symbol) => println!("identifier '{}'", symbol.display(ctx)),
             _ => println!("{token}"),
         }
     }

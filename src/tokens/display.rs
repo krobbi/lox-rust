@@ -27,7 +27,7 @@ impl Display for TokenKind {
                 let type_name = literal.type_name();
                 write!(f, "{type_name} '{literal}'")
             }
-            Self::Ident(symbol) => write!(f, "identifier '{symbol}'"),
+            Self::Ident(_) => write!(f, "TODO: Remove display"),
             _ => Display::fmt(&self.token_type(), f),
         }
     }
@@ -45,7 +45,7 @@ impl Display for Literal {
             Self::Nil => f.write_str("nil"),
             Self::Bool(value) => Display::fmt(value, f),
             Self::Number(value) => Display::fmt(value, f),
-            Self::String(symbol) => Display::fmt(symbol, f),
+            Self::String(_) => write!(f, "TODO: Remove display"),
         }
     }
 }

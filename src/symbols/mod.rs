@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests;
 
-mod display;
+mod render;
 
 use std::collections::HashMap;
 
