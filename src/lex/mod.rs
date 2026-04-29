@@ -104,8 +104,6 @@ impl<'src, 'sym> Lexer<'src, 'sym> {
     fn next_word(&mut self) -> TokenKind {
         self.scanner.eat_while(is_char_word_continue);
 
-        // TODO: Consider using pre-interned symbols to check for keywords. Only
-        // do this if it improves performance.
         match self.scanner.lexeme() {
             "and" => TokenKind::And,
             "class" => TokenKind::Class,
