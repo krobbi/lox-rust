@@ -32,11 +32,18 @@ fn symbols_preserve_equality() {
     assert_ne!(foo_a, bar);
     assert_ne!(foo_upper, bar);
 
-    // Test that string slices are checked for equality by value.
+    // String slices should be compared by value.
     let mut string = String::new();
     string.push(hint::black_box('f'));
     string.push(hint::black_box('o'));
     string.push(hint::black_box('o'));
+    let foo_c = symbols.intern(&string);
+    assert_eq!(foo_c, foo_a);
 
-    assert_eq!(symbols.intern(&string), foo_a);
+    // Symbols should have the correct string slices.
+    assert_eq!(symbols.string(foo_a), "foo");
+    assert_eq!(symbols.string(foo_b), "foo");
+    assert_eq!(symbols.string(foo_c), "foo");
+    assert_eq!(symbols.string(foo_upper), "Foo");
+    assert_eq!(symbols.string(bar), "bar");
 }

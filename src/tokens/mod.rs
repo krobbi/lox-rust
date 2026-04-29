@@ -90,6 +90,11 @@ impl Token {
         Self { kind }
     }
 
+    /// Returns the `Token`'s [`TokenKind`].
+    pub const fn kind(&self) -> TokenKind {
+        self.kind
+    }
+
     /// Returns the `Token`'s [`TokenType`].
     pub const fn token_type(&self) -> TokenType {
         self.kind.token_type()

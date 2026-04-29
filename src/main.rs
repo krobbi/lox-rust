@@ -9,7 +9,11 @@ use std::{
     process::ExitCode,
 };
 
-use crate::{lex::Lexer, symbols::SymbolTable, tokens::TokenType};
+use crate::{
+    lex::Lexer,
+    symbols::SymbolTable,
+    tokens::{Literal, TokenKind, TokenType},
+};
 
 /// Runs Lox and returns an [`ExitCode`].
 fn main() -> ExitCode {
@@ -79,13 +83,25 @@ fn interpret_file(path: &Path) -> Result<(), ()> {
 fn interpret_source(source: &str) {
     let mut symbols = SymbolTable::new();
     let mut lexer = Lexer::new(source, &mut symbols);
+    let mut tokens = Vec::new();
 
     loop {
         let token = lexer.next_token();
-        println!("{token}");
 
         if token.token_type() == TokenType::Eof {
             break;
+        }
+
+        tokens.push(token);
+    }
+
+    for token in tokens {
+        match token.kind() {
+            TokenKind::Literal(Literal::String(symbol)) => {
+                println!("string {:?}", symbols.string(symbol));
+            }
+            TokenKind::Ident(symbol) => println!("identifier '{}'", symbols.string(symbol)),
+            _ => println!("{token}"),
         }
     }
 }

@@ -5,7 +5,7 @@ mod display;
 
 use std::collections::HashMap;
 
-/// An interned string slice.
+/// A unique identifier for an interned string slice.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[repr(transparent)]
 pub struct Symbol(u32);
@@ -13,10 +13,10 @@ pub struct Symbol(u32);
 /// A table of [`Symbol`]s.
 #[derive(Default)]
 pub struct SymbolTable {
-    /// The map of interned string slices to [`Symbol`]s.
+    /// The map of string slices to [`Symbol`]s.
     symbols: HashMap<Box<str>, Symbol>,
 
-    /// The index for the next interned string slice's [`Symbol`].
+    /// The index for the next [`Symbol`].
     next_index: u32,
 }
 
@@ -26,10 +26,22 @@ impl SymbolTable {
         Self::default()
     }
 
+    /// Returns a [`Symbol`]'s string slice.
+    pub fn string(&self, symbol: Symbol) -> &str {
+        #[expect(clippy::iter_over_hash_type, reason = "symbols are unique")]
+        for (string, interned_symbol) in &self.symbols {
+            if *interned_symbol == symbol {
+                return string;
+            }
+        }
+
+        unreachable!("symbol should have a string slice");
+    }
+
     /// Interns a string slice and returns its [`Symbol`].
     pub fn intern(&mut self, string: &str) -> Symbol {
-        if let Some(symbol) = self.symbols.get(string) {
-            return *symbol;
+        if let Some(symbol) = self.symbols.get(string).copied() {
+            return symbol;
         }
 
         let symbol = Symbol(self.next_index);
