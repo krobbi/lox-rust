@@ -149,11 +149,10 @@ impl<'src, 'sym> Lexer<'src, 'sym> {
     /// Returns the next string [`TokenKind`] after consuming its first
     /// [`char`].
     fn next_string(&mut self) -> TokenKind {
-        // HACK: Exclude opening quote from string value.
-        self.scanner.begin_lexeme();
-
         self.scanner.eat_while(is_char_in_string);
-        let value = self.scanner.lexeme();
+
+        #[expect(clippy::string_slice, reason = "first code point is a 1-byte quote")]
+        let value = &self.scanner.lexeme()[1..];
 
         if !self.scanner.eat('"') {
             eprintln!("Unterminated string.");
