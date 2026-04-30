@@ -98,7 +98,7 @@ fn interpret_source(source: &str) {
         }
     }
 
-    let ctx = RenderContext::new(&symbols);
+    let ctx = RenderContext::new(source, &symbols);
 
     for token in tokens {
         println!("{}", token.display(ctx));
