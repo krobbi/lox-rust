@@ -76,7 +76,7 @@ impl<'src, 'sym, 'log> Lexer<'src, 'sym, 'log> {
             ',' => TokenKind::Comma,
             '.' => {
                 if self.is_digit_next() {
-                    eprintln!("Number has a leading decimal point.");
+                    self.report_here(Diag::LeadingDecimal);
                     self.scanner.eat_while(is_char_digit);
                     self.number_from_lexeme()
                 } else {

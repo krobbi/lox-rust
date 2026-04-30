@@ -11,6 +11,9 @@ pub enum Diag {
 
     /// A string literal without a terminating quote was encountered.
     UnterminatedString,
+
+    /// A number literal with a leading decimal point was encountered.
+    LeadingDecimal,
 }
 
 impl Render for Diag {
@@ -18,6 +21,7 @@ impl Render for Diag {
         match self {
             Self::UnexpectedChar(char) => write!(f, "Unexpected character {char:?}."),
             Self::UnterminatedString => write!(f, "This string has no terminating '\"'."),
+            Self::LeadingDecimal => write!(f, "This number starts with a '.' - add a leading '0'."),
         }
     }
 }
