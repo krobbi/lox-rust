@@ -21,7 +21,6 @@ pub trait Render: Debug {
 #[derive(Clone, Copy)]
 pub struct RenderContext<'src, 'sym> {
     /// The source code.
-    #[expect(dead_code, reason = "field should be used later")]
     source: &'src str,
 
     /// The [`SymbolTable`].
@@ -32,6 +31,11 @@ impl<'src, 'sym> RenderContext<'src, 'sym> {
     /// Creates a new `RenderContext` from source code and a [`SymbolTable`].
     pub const fn new(source: &'src str, symbols: &'sym SymbolTable) -> Self {
         Self { source, symbols }
+    }
+
+    /// Returns the source code.
+    pub const fn source(self) -> &'src str {
+        self.source
     }
 
     /// Returns a [`Symbol`]'s string slice.
