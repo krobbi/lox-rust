@@ -39,16 +39,6 @@ impl<'src, 'sym> Lexer<'src, 'sym> {
     /// Returns the next [`TokenKind`]. This function returns [`None`] if
     /// whitespace, a comment, or an error was encountered.
     fn next_token_kind(&mut self) -> Option<TokenKind> {
-        macro_rules! read_digraph {
-            ($short:ident, $long:ident) => {
-                if self.scanner.eat('=') {
-                    TokenKind::$long
-                } else {
-                    TokenKind::$short
-                }
-            };
-        }
-
         let Some(char) = self.scanner.bump() else {
             return Some(TokenKind::Eof);
         };
@@ -87,10 +77,10 @@ impl<'src, 'sym> Lexer<'src, 'sym> {
                 TokenKind::Slash
             }
             '*' => TokenKind::Star,
-            '!' => read_digraph!(Bang, BangEquals),
-            '=' => read_digraph!(Equals, EqualsEquals),
-            '>' => read_digraph!(Greater, GreaterEquals),
-            '<' => read_digraph!(Less, LessEquals),
+            '!' => self.next_digraph(TokenKind::Bang, TokenKind::BangEquals),
+            '=' => self.next_digraph(TokenKind::Equals, TokenKind::EqualsEquals),
+            '>' => self.next_digraph(TokenKind::Greater, TokenKind::GreaterEquals),
+            '<' => self.next_digraph(TokenKind::Less, TokenKind::LessEquals),
             _ => {
                 eprintln!("Unexpected character {char:?}.");
                 return None;
@@ -101,7 +91,7 @@ impl<'src, 'sym> Lexer<'src, 'sym> {
     }
 
     /// Returns the next keyword or identifier [`TokenKind`] after consuming its
-    /// first [`char`].
+    /// first letter [`char`].
     fn next_word(&mut self) -> TokenKind {
         self.scanner.eat_while(is_char_word_continue);
 
@@ -126,8 +116,8 @@ impl<'src, 'sym> Lexer<'src, 'sym> {
         }
     }
 
-    /// Returns the next number [`TokenKind`] after consuming its first
-    /// [`char`].
+    /// Returns the next number literal [`TokenKind`] after consuming its first
+    /// digit [`char`].
     fn next_number(&mut self) -> TokenKind {
         self.scanner.eat_while(is_char_digit);
 
@@ -147,8 +137,8 @@ impl<'src, 'sym> Lexer<'src, 'sym> {
         self.number_from_lexeme()
     }
 
-    /// Returns the next string [`TokenKind`] after consuming its first
-    /// [`char`].
+    /// Returns the next string literal [`TokenKind`] after consuming its
+    /// opening quote [`char`].
     fn next_string(&mut self) -> TokenKind {
         self.scanner.eat_while(is_char_in_string);
 
@@ -160,6 +150,12 @@ impl<'src, 'sym> Lexer<'src, 'sym> {
         }
 
         TokenKind::Literal(Literal::String(self.symbols.intern(value)))
+    }
+
+    /// Returns the next short or long [`TokenKind`] depending on whether an
+    /// equals sign [`char`] is consumed.
+    fn next_digraph(&mut self, short: TokenKind, long: TokenKind) -> TokenKind {
+        if self.scanner.eat('=') { long } else { short }
     }
 
     /// Returns [`true`] if the next [`char`] is a digit.
