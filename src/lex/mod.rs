@@ -100,10 +100,7 @@ impl<'src, 'sym, 'log> Lexer<'src, 'sym, 'log> {
             '>' => self.next_digraph(TokenKind::Greater, TokenKind::GreaterEquals),
             '<' => self.next_digraph(TokenKind::Less, TokenKind::LessEquals),
             _ => {
-                let start = self.pos;
-                let end = start + self.scanner.lexeme_length();
-                let span = Span::new(start, end);
-                self.log.report(Diag::UnexpectedChar(char), span);
+                self.report_here(Diag::UnexpectedChar(char));
                 return None;
             }
         };
@@ -167,7 +164,7 @@ impl<'src, 'sym, 'log> Lexer<'src, 'sym, 'log> {
         let value = &self.scanner.lexeme()[1..];
 
         if !self.scanner.eat('"') {
-            eprintln!("Unterminated string.");
+            self.report_here(Diag::UnterminatedString);
         }
 
         TokenKind::Literal(Literal::String(self.symbols.intern(value)))
@@ -191,6 +188,14 @@ impl<'src, 'sym, 'log> Lexer<'src, 'sym, 'log> {
         let value = self.scanner.lexeme();
         let value = value.parse().expect("lexeme should be a valid float");
         TokenKind::Literal(Literal::Number(value))
+    }
+
+    /// Reports a [`Diag`] at the current lexeme.
+    fn report_here(&mut self, diag: Diag) {
+        let start = self.pos;
+        let end = start + self.scanner.lexeme_length();
+        let span = Span::new(start, end);
+        self.log.report(diag, span);
     }
 }
 
