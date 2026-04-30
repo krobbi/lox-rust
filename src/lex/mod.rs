@@ -1,6 +1,8 @@
 mod scan;
 
 use crate::{
+    diagnostics::Diag,
+    log::Log,
     spans::{BytePos, Span},
     symbols::SymbolTable,
     tokens::{Literal, Token, TokenKind},
@@ -9,23 +11,28 @@ use crate::{
 use self::scan::Scanner;
 
 /// A structure which reads a stream of [`Token`]s from source code.
-pub struct Lexer<'src, 'sym> {
+pub struct Lexer<'src, 'sym, 'log> {
     /// The [`Scanner`].
     scanner: Scanner<'src>,
 
     /// The [`SymbolTable`].
     symbols: &'sym mut SymbolTable,
 
+    /// The [`Log`].
+    log: &'log mut Log,
+
     /// The next [`Token`]'s start [`BytePos`].
     pos: BytePos,
 }
 
-impl<'src, 'sym> Lexer<'src, 'sym> {
-    /// Creates a new `Lexer` from source code and a [`SymbolTable`].
-    pub fn new(source: &'src str, symbols: &'sym mut SymbolTable) -> Self {
+impl<'src, 'sym, 'log> Lexer<'src, 'sym, 'log> {
+    /// Creates a new `Lexer` from source code, a [`SymbolTable`], and a
+    /// [`Log`].
+    pub fn new(source: &'src str, symbols: &'sym mut SymbolTable, log: &'log mut Log) -> Self {
         Self {
             scanner: Scanner::new(source),
             symbols,
+            log,
             pos: BytePos::new(),
         }
     }
@@ -93,7 +100,10 @@ impl<'src, 'sym> Lexer<'src, 'sym> {
             '>' => self.next_digraph(TokenKind::Greater, TokenKind::GreaterEquals),
             '<' => self.next_digraph(TokenKind::Less, TokenKind::LessEquals),
             _ => {
-                eprintln!("Unexpected character {char:?}.");
+                let start = self.pos;
+                let end = start + self.scanner.lexeme_length();
+                let span = Span::new(start, end);
+                self.log.report(Diag::UnexpectedChar(char), span);
                 return None;
             }
         };

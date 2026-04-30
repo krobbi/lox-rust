@@ -1,4 +1,6 @@
+mod diagnostics;
 mod lex;
+mod log;
 mod render;
 mod spans;
 mod symbols;
@@ -13,6 +15,7 @@ use std::{
 
 use crate::{
     lex::Lexer,
+    log::Log,
     render::{Render as _, RenderContext},
     symbols::SymbolTable,
     tokens::TokenType,
@@ -84,8 +87,9 @@ fn interpret_file(path: &Path) -> Result<(), ()> {
 
 /// Interprets source code.
 fn interpret_source(source: &str) {
+    let mut log = Log::new();
     let mut symbols = SymbolTable::new();
-    let mut lexer = Lexer::new(source, &mut symbols);
+    let mut lexer = Lexer::new(source, &mut symbols, &mut log);
     let mut tokens = Vec::new();
 
     loop {
@@ -103,4 +107,6 @@ fn interpret_source(source: &str) {
     for token in tokens {
         println!("{}", token.display(ctx));
     }
+
+    log.flush(ctx);
 }
