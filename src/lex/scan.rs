@@ -19,9 +19,14 @@ impl<'src> Scanner<'src> {
         }
     }
 
+    /// Returns the current lexeme's length in bytes.
+    pub fn lexeme_length(&self) -> usize {
+        self.rest.len() - self.chars.as_str().len()
+    }
+
     /// Returns the current lexeme.
     pub fn lexeme(&self) -> &'src str {
-        let length = self.rest.len() - self.chars.as_str().len();
+        let length = self.lexeme_length();
 
         #[expect(
             clippy::string_slice,

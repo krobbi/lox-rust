@@ -1,6 +1,6 @@
 mod render;
 
-use crate::symbols::Symbol;
+use crate::{spans::Span, symbols::Symbol};
 
 /// Defines the set of [`TokenKind`]s.
 macro_rules! define_token_kinds {
@@ -82,12 +82,15 @@ define_token_kinds! {
 pub struct Token {
     /// The [`TokenKind`].
     kind: TokenKind,
+
+    /// The [`Span`].
+    span: Span,
 }
 
 impl Token {
-    /// Creates a new `Token` from its [`TokenKind`].
-    pub const fn new(kind: TokenKind) -> Self {
-        Self { kind }
+    /// Creates a new `Token` from its [`TokenKind`] and [`Span`].
+    pub const fn new(kind: TokenKind, span: Span) -> Self {
+        Self { kind, span }
     }
 
     /// Returns the `Token`'s [`TokenType`].

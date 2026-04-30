@@ -1,5 +1,6 @@
 mod lex;
 mod log;
+mod spans;
 mod symbols;
 mod tokens;
 

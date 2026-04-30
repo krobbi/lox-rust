@@ -1,6 +1,7 @@
 mod scan;
 
 use crate::{
+    spans::{BytePos, Span},
     symbols::SymbolTable,
     tokens::{Literal, Token, TokenKind},
 };
@@ -14,6 +15,9 @@ pub struct Lexer<'src, 'sym> {
 
     /// The [`SymbolTable`].
     symbols: &'sym mut SymbolTable,
+
+    /// The next [`Token`]'s start [`BytePos`].
+    pos: BytePos,
 }
 
 impl<'src, 'sym> Lexer<'src, 'sym> {
@@ -22,6 +26,7 @@ impl<'src, 'sym> Lexer<'src, 'sym> {
         Self {
             scanner: Scanner::new(source),
             symbols,
+            pos: BytePos::new(),
         }
     }
 
@@ -29,9 +34,15 @@ impl<'src, 'sym> Lexer<'src, 'sym> {
     pub fn next_token(&mut self) -> Token {
         loop {
             self.scanner.begin_lexeme();
+            let kind = self.next_token_kind();
 
-            if let Some(kind) = self.next_token_kind() {
-                break Token::new(kind);
+            let start = self.pos;
+            let end = start + self.scanner.lexeme_length();
+            self.pos = end;
+
+            if let Some(kind) = kind {
+                let span = Span::new(start, end);
+                break Token::new(kind, span);
             }
         }
     }

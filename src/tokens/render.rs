@@ -6,7 +6,7 @@ use super::{Literal, Token, TokenKind, TokenType};
 
 impl Render for Token {
     fn fmt(&self, ctx: RenderContext<'_>, f: &mut Formatter<'_>) -> fmt::Result {
-        Render::fmt(&self.kind, ctx, f)
+        write!(f, "{} {}", self.span.display(ctx), self.kind.display(ctx))
     }
 }
 
