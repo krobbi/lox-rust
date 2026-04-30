@@ -76,7 +76,11 @@ impl<'src, 'sym, 'log> Lexer<'src, 'sym, 'log> {
             ',' => TokenKind::Comma,
             '.' => {
                 if self.is_digit_next() {
-                    self.report_here(Diag::LeadingDecimal);
+                    let start = self.pos;
+                    let end = start;
+                    let span = Span::new(start, end);
+                    self.log.report(Diag::LeadingDecimal, span);
+
                     self.scanner.eat_while(is_char_digit);
                     self.number_from_lexeme()
                 } else {
@@ -100,7 +104,11 @@ impl<'src, 'sym, 'log> Lexer<'src, 'sym, 'log> {
             '>' => self.next_digraph(TokenKind::Greater, TokenKind::GreaterEquals),
             '<' => self.next_digraph(TokenKind::Less, TokenKind::LessEquals),
             _ => {
-                self.report_here(Diag::UnexpectedChar(char));
+                let start = self.pos;
+                let end = start + self.scanner.lexeme_length();
+                let span = Span::new(start, end);
+                self.log.report(Diag::UnexpectedChar(char), span);
+
                 return None;
             }
         };
@@ -146,7 +154,10 @@ impl<'src, 'sym, 'log> Lexer<'src, 'sym, 'log> {
         // error.
         if self.scanner.eat('.') {
             if !self.is_digit_next() {
-                eprintln!("Number has a trailing decimal point.");
+                let start = self.pos + (self.scanner.lexeme_length() - 1);
+                let end = start + 1;
+                let span = Span::new(start, end);
+                self.log.report(Diag::TrailingDecimal, span);
             }
 
             self.scanner.eat_while(is_char_digit);
@@ -164,7 +175,10 @@ impl<'src, 'sym, 'log> Lexer<'src, 'sym, 'log> {
         let value = &self.scanner.lexeme()[1..];
 
         if !self.scanner.eat('"') {
-            self.report_here(Diag::UnterminatedString);
+            let start = self.pos + 1;
+            let end = self.pos + self.scanner.lexeme_length();
+            let span = Span::new(start, end);
+            self.log.report(Diag::UnterminatedString, span);
         }
 
         TokenKind::Literal(Literal::String(self.symbols.intern(value)))
@@ -188,14 +202,6 @@ impl<'src, 'sym, 'log> Lexer<'src, 'sym, 'log> {
         let value = self.scanner.lexeme();
         let value = value.parse().expect("lexeme should be a valid float");
         TokenKind::Literal(Literal::Number(value))
-    }
-
-    /// Reports a [`Diag`] at the current lexeme.
-    fn report_here(&mut self, diag: Diag) {
-        let start = self.pos;
-        let end = start + self.scanner.lexeme_length();
-        let span = Span::new(start, end);
-        self.log.report(diag, span);
     }
 }
 
