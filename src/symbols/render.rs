@@ -1,6 +1,6 @@
 use std::fmt::{self, Formatter};
 
-use crate::log::{Render, RenderContext};
+use crate::render::{Render, RenderContext};
 
 use super::Symbol;
 

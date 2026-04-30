@@ -1,5 +1,5 @@
 mod lex;
-mod log;
+mod render;
 mod spans;
 mod symbols;
 mod tokens;
@@ -13,7 +13,7 @@ use std::{
 
 use crate::{
     lex::Lexer,
-    log::{Render as _, RenderContext},
+    render::{Render as _, RenderContext},
     symbols::SymbolTable,
     tokens::TokenType,
 };
