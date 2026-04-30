@@ -6,6 +6,6 @@ use super::Symbol;
 
 impl Render for Symbol {
     fn fmt(&self, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str(ctx.symbol_string(*self))
+        write!(f, "{}", ctx.symbol_string(*self))
     }
 }

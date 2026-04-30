@@ -1,4 +1,4 @@
-use std::fmt::{self, Debug, Display, Formatter};
+use std::fmt::{self, Formatter};
 
 use crate::render::{Render, RenderContext};
 
@@ -15,24 +15,24 @@ impl Render for TokenKind {
         match self {
             Self::Literal(literal) => write!(f, "literal {}", literal.display(ctx)),
             Self::Ident(symbol) => write!(f, "identifier '{}'", symbol.display(ctx)),
-            _ => Render::fmt(&self.token_type(), ctx, f),
+            _ => write!(f, "{}", self.token_type().display(ctx)),
         }
     }
 }
 
 impl Render for TokenType {
     fn fmt(&self, _ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str(self.description())
+        write!(f, "{}", self.description())
     }
 }
 
 impl Render for Literal {
     fn fmt(&self, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Nil => f.write_str("nil"),
-            Self::Bool(value) => Display::fmt(value, f),
-            Self::Number(value) => Display::fmt(value, f),
-            Self::String(symbol) => Debug::fmt(&symbol.display(ctx).to_string(), f),
+            Self::Nil => write!(f, "nil"),
+            Self::Bool(value) => write!(f, "{value}"),
+            Self::Number(value) => write!(f, "{value}"),
+            Self::String(symbol) => write!(f, "{:?}", symbol.display(ctx).to_string()),
         }
     }
 }
