@@ -37,6 +37,11 @@ impl<'src, 'sym, 'log> Lexer<'src, 'sym, 'log> {
         }
     }
 
+    /// Returns a mutable reference to the [`Log`].
+    pub const fn log_mut(&mut self) -> &mut Log {
+        self.log
+    }
+
     /// Returns the next [`Token`].
     pub fn next_token(&mut self) -> Token {
         loop {

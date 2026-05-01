@@ -1,6 +1,9 @@
 use std::fmt::{self, Formatter};
 
-use crate::render::{Render, RenderContext};
+use crate::{
+    render::{Render, RenderContext},
+    tokens::TokenKind,
+};
 
 /// A diagnostic message.
 #[derive(Debug)]
@@ -17,10 +20,14 @@ pub enum Diag {
 
     /// A number literal with a trailing decimal point was encountered.
     TrailingDecimal,
+
+    /// A [`TokenKind`] which does not begin an [`Expr`][crate::ast::Expr] was
+    /// encountered.
+    ExpectedExpr(TokenKind),
 }
 
 impl Render for Diag {
-    fn fmt(&self, _ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::UnexpectedChar(char) => write!(f, "Unexpected character {char:?}."),
             Self::UnterminatedString => write!(f, "This string has no terminating '\"'."),
@@ -29,6 +36,9 @@ impl Render for Diag {
                 f,
                 "This number has a trailing '.' - remove it or add a trailing '0'."
             ),
+            Self::ExpectedExpr(kind) => {
+                write!(f, "Expected an expression, found {}.", kind.display(ctx))
+            }
         }
     }
 }

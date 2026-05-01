@@ -93,9 +93,20 @@ impl Token {
         Self { kind, span }
     }
 
+    /// Returns the `Token`'s [`TokenKind`].
+    pub const fn kind(&self) -> TokenKind {
+        self.kind
+    }
+
     /// Returns the `Token`'s [`TokenType`].
+    #[expect(dead_code, reason = "method should be used later")]
     pub const fn token_type(&self) -> TokenType {
         self.kind.token_type()
+    }
+
+    /// Returns the `Token`'s [`Span`].
+    pub const fn span(&self) -> Span {
+        self.span
     }
 }
 

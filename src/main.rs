@@ -1,6 +1,8 @@
+mod ast;
 mod diagnostics;
 mod lex;
 mod log;
+mod parse;
 mod render;
 mod spans;
 mod symbols;
@@ -13,13 +15,7 @@ use std::{
     process::ExitCode,
 };
 
-use crate::{
-    lex::Lexer,
-    log::Log,
-    render::{Render as _, RenderContext},
-    symbols::SymbolTable,
-    tokens::TokenType,
-};
+use crate::{log::Log, render::RenderContext, symbols::SymbolTable};
 
 /// Runs Lox and returns an [`ExitCode`].
 fn main() -> ExitCode {
@@ -87,26 +83,11 @@ fn interpret_file(path: &Path) -> Result<(), ()> {
 
 /// Interprets source code.
 fn interpret_source(source: &str) {
-    let mut log = Log::new();
     let mut symbols = SymbolTable::new();
-    let mut lexer = Lexer::new(source, &mut symbols, &mut log);
-    let mut tokens = Vec::new();
-
-    loop {
-        let token = lexer.next_token();
-        let is_eof = token.token_type() == TokenType::Eof;
-        tokens.push(token);
-
-        if is_eof {
-            break;
-        }
-    }
+    let mut log = Log::new();
+    let ast = parse::parse_source(source, &mut symbols, &mut log);
+    println!("{ast:#?}");
 
     let ctx = RenderContext::new(source, &symbols);
-
-    for token in tokens {
-        println!("{}", token.display(ctx));
-    }
-
     log.flush(ctx);
 }
