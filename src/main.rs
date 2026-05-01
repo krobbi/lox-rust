@@ -1,4 +1,5 @@
 mod ast;
+mod ast_dump;
 mod diagnostics;
 mod lex;
 mod log;
@@ -86,8 +87,7 @@ fn interpret_source(source: &str) {
     let mut symbols = SymbolTable::new();
     let mut log = Log::new();
     let ast = parse::parse_source(source, &mut symbols, &mut log);
-    println!("{ast:#?}");
-
     let ctx = RenderContext::new(source, &symbols);
+    ast_dump::print_ast(&ast, ctx);
     log.flush(ctx);
 }

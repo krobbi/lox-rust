@@ -1,5 +1,3 @@
-#![expect(dead_code, reason = "fields are debug printed")]
-
 use crate::{spans::Span, tokens::Literal};
 
 /// An abstract syntax tree.
