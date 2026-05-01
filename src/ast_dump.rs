@@ -57,9 +57,10 @@ impl Node<'_> {
 }
 
 /// Rerturns an [`Expr`]'s child `Node`s.
-const fn expr_children(expr: &Expr) -> Vec<Node<'_>> {
-    match expr.kind {
+fn expr_children(expr: &Expr) -> Vec<Node<'_>> {
+    match &expr.kind {
         ExprKind::Literal(_) | ExprKind::Variable(_) | ExprKind::This => Vec::new(),
+        ExprKind::Paren(expr) => vec![Node::Expr(expr)],
     }
 }
 
@@ -77,9 +78,10 @@ impl Render for Node<'_> {
 fn fmt_expr(expr: &Expr, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> fmt::Result {
     write!(f, "[Expr]{} ", expr.span.display(ctx))?;
 
-    match expr.kind {
+    match &expr.kind {
         ExprKind::Literal(literal) => write!(f, "Literal({})", literal.display(ctx)),
         ExprKind::Variable(symbol) => write!(f, "Variable({})", symbol.display(ctx)),
         ExprKind::This => write!(f, "This"),
+        ExprKind::Paren(_) => write!(f, "Paren"),
     }
 }

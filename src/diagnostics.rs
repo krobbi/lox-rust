@@ -2,7 +2,7 @@ use std::fmt::{self, Formatter};
 
 use crate::{
     render::{Render, RenderContext},
-    tokens::TokenKind,
+    tokens::{TokenKind, TokenType},
 };
 
 /// A diagnostic message.
@@ -20,6 +20,10 @@ pub enum Diag {
 
     /// A number literal with a trailing decimal point was encountered.
     TrailingDecimal,
+
+    /// A [`TokenKind`] which does not match an expected [`TokenType`] was
+    /// encountered.
+    UnexpectedToken(TokenType, TokenKind),
 
     /// A [`TokenKind`] which does not begin an [`Expr`][crate::ast::Expr] was
     /// encountered.
@@ -39,6 +43,12 @@ impl Render for Diag {
             Self::ExpectedExpr(kind) => {
                 write!(f, "Expected an expression, found {}.", kind.display(ctx))
             }
+            Self::UnexpectedToken(token_type, kind) => write!(
+                f,
+                "Expected {}, found {}.",
+                token_type.display(ctx),
+                kind.display(ctx)
+            ),
         }
     }
 }

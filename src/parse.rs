@@ -5,8 +5,9 @@ use crate::{
     diagnostics::Diag,
     lex::Lexer,
     log::Log,
+    spans::Span,
     symbols::SymbolTable,
-    tokens::{Literal, Token, TokenKind},
+    tokens::{Literal, Token, TokenKind, TokenType},
 };
 
 /// Parses and returns an [`Ast`] from source code, a [`SymbolTable`], and a
@@ -53,9 +54,14 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
         let kind = match token.kind() {
             TokenKind::Literal(literal) => ExprKind::Literal(literal),
             TokenKind::Ident(symbol) => ExprKind::Variable(symbol),
+            TokenKind::OpenParen => {
+                let expr = self.parse_expr();
+                self.expect(TokenType::CloseParen);
+                ExprKind::Paren(Box::new(expr))
+            }
             TokenKind::This => ExprKind::This,
             kind => {
-                self.lexer.log_mut().report(Diag::ExpectedExpr(kind), span);
+                self.report(Diag::ExpectedExpr(kind), span);
                 error_expr()
             }
         };
@@ -63,9 +69,37 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
         Expr { kind, span }
     }
 
+    /// Reports a [`Diag`] at a [`Span`].
+    fn report(&mut self, diag: Diag, span: Span) {
+        self.lexer.log_mut().report(diag, span);
+    }
+
     /// Consumes and returns the next [`Token`].
     fn bump(&mut self) -> Token {
         mem::replace(&mut self.next_token, self.lexer.next_token())
+    }
+
+    /// Consumes the next [`Token`] if it matches an expected [`TokenType`].
+    /// This function returns [`true`] if a [`Token`] was consumed.
+    fn eat(&mut self, token_type: TokenType) -> bool {
+        let is_match = self.next_token.token_type() == token_type;
+
+        if is_match {
+            self.bump();
+        }
+
+        is_match
+    }
+
+    /// Consumes the next [`Token`] if it matches an expected [`TokenType`].
+    /// This function reports a [`Diag`] if no [`Token`] was consumed.
+    fn expect(&mut self, token_type: TokenType) {
+        if !self.eat(token_type) {
+            self.report(
+                Diag::UnexpectedToken(token_type, self.next_token.kind()),
+                self.next_token.span(),
+            );
+        }
     }
 }
 

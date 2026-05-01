@@ -99,7 +99,6 @@ impl Token {
     }
 
     /// Returns the `Token`'s [`TokenType`].
-    #[expect(dead_code, reason = "method should be used later")]
     pub const fn token_type(&self) -> TokenType {
         self.kind.token_type()
     }

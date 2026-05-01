@@ -25,4 +25,7 @@ pub enum ExprKind {
 
     /// An instance.
     This,
+
+    /// A parenthesized [`Expr`].
+    Paren(Box<Expr>),
 }
