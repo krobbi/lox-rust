@@ -22,4 +22,7 @@ pub enum ExprKind {
 
     /// A variable.
     Variable(Symbol),
+
+    /// An instance.
+    This,
 }

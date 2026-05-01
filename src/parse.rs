@@ -53,6 +53,7 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
         let kind = match token.kind() {
             TokenKind::Literal(literal) => ExprKind::Literal(literal),
             TokenKind::Ident(symbol) => ExprKind::Variable(symbol),
+            TokenKind::This => ExprKind::This,
             kind => {
                 self.lexer.log_mut().report(Diag::ExpectedExpr(kind), span);
                 error_expr()
