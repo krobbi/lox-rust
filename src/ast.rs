@@ -1,4 +1,4 @@
-use crate::{spans::Span, tokens::Literal};
+use crate::{spans::Span, symbols::Symbol, tokens::Literal};
 
 /// An abstract syntax tree.
 #[derive(Debug)]
@@ -19,4 +19,7 @@ pub struct Expr {
 pub enum ExprKind {
     /// A [`Literal`].
     Literal(Literal),
+
+    /// A variable.
+    Variable(Symbol),
 }

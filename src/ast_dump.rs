@@ -59,7 +59,7 @@ impl Node<'_> {
 /// Rerturns an [`Expr`]'s child `Node`s.
 const fn expr_children(expr: &Expr) -> Vec<Node<'_>> {
     match expr.kind {
-        ExprKind::Literal(_) => Vec::new(),
+        ExprKind::Literal(_) | ExprKind::Variable(_) => Vec::new(),
     }
 }
 
@@ -79,5 +79,6 @@ fn fmt_expr(expr: &Expr, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> f
 
     match expr.kind {
         ExprKind::Literal(literal) => write!(f, "Literal({})", literal.display(ctx)),
+        ExprKind::Variable(symbol) => write!(f, "Variable({})", symbol.display(ctx)),
     }
 }
