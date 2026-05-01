@@ -41,4 +41,14 @@ impl Span {
         debug_assert!(end >= start, "span is reversed");
         Self { start, end }
     }
+
+    /// Returns the `Span`'s start [`BytePos`].
+    pub const fn start(self) -> BytePos {
+        self.start
+    }
+
+    /// Returns the `Span`'s end [`BytePos`].
+    pub const fn end(self) -> BytePos {
+        self.end
+    }
 }

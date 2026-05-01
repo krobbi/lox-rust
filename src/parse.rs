@@ -5,7 +5,7 @@ use crate::{
     diagnostics::Diag,
     lex::Lexer,
     log::Log,
-    spans::Span,
+    spans::{BytePos, Span},
     symbols::SymbolTable,
     tokens::{Literal, Token, TokenKind, TokenType},
 };
@@ -24,6 +24,9 @@ struct Parser<'src, 'sym, 'log> {
 
     /// The next [`Token`].
     next_token: Token,
+
+    /// The previous [`Token`]'s end [`BytePos`].
+    pos: BytePos,
 }
 
 impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
@@ -32,7 +35,12 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
     fn new(source: &'src str, symbols: &'sym mut SymbolTable, log: &'log mut Log) -> Self {
         let mut lexer = Lexer::new(source, symbols, log);
         let next_token = lexer.next_token();
-        Self { lexer, next_token }
+
+        Self {
+            lexer,
+            next_token,
+            pos: BytePos::new(),
+        }
     }
 
     /// Parses and returns an [`Ast`].
@@ -49,7 +57,7 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
     /// Parses and returns an atom [`Expr`].
     fn parse_expr_atom(&mut self) -> Expr {
         let token = self.bump();
-        let span = token.span();
+        let start = token.span().start();
 
         let kind = match token.kind() {
             TokenKind::Literal(literal) => ExprKind::Literal(literal),
@@ -61,12 +69,20 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
             }
             TokenKind::This => ExprKind::This,
             kind => {
-                self.report(Diag::ExpectedExpr(kind), span);
+                self.report(Diag::ExpectedExpr(kind), token.span());
                 error_expr()
             }
         };
 
-        Expr { kind, span }
+        self.create_expr(kind, start)
+    }
+
+    /// Creates a new [`Expr`] from an [`ExprKind`] and a start [`BytePos`].
+    fn create_expr(&self, kind: ExprKind, start: BytePos) -> Expr {
+        Expr {
+            kind,
+            span: Span::new(start, self.pos),
+        }
     }
 
     /// Reports a [`Diag`] at a [`Span`].
@@ -76,6 +92,7 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
 
     /// Consumes and returns the next [`Token`].
     fn bump(&mut self) -> Token {
+        self.pos = self.next_token.span().end();
         mem::replace(&mut self.next_token, self.lexer.next_token())
     }
 
