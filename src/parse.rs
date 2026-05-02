@@ -1,13 +1,11 @@
-use std::mem;
-
 use crate::{
-    ast::{Ast, Expr, ExprKind},
+    ast::{Ast, Expr, ExprKind, Ident},
     diagnostics::Diag,
     lex::Lexer,
     log::Log,
     spans::{BytePos, Span},
-    symbols::SymbolTable,
-    tokens::{Literal, Token, TokenKind, TokenType},
+    symbols::{Symbol, SymbolTable},
+    tokens::{Token, TokenKind, TokenType},
 };
 
 /// Parses and returns an [`Ast`] from source code, a [`SymbolTable`], and a
@@ -26,7 +24,7 @@ struct Parser<'src, 'sym, 'log> {
     next_token: Token,
 
     /// The previous [`Token`]'s end [`BytePos`].
-    pos: BytePos,
+    prev_token_end_pos: BytePos,
 }
 
 impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
@@ -39,7 +37,7 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
         Self {
             lexer,
             next_token,
-            pos: BytePos::new(),
+            prev_token_end_pos: BytePos::new(),
         }
     }
 
@@ -51,55 +49,124 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
 
     /// Parses and returns an [`Expr`].
     fn parse_expr(&mut self) -> Expr {
-        self.parse_expr_atom()
+        self.parse_expr_primary()
     }
 
-    /// Parses and returns an atom [`Expr`].
-    fn parse_expr_atom(&mut self) -> Expr {
-        let token = self.bump();
-        let start = token.span().start();
+    /// Parses and returns a primary [`Expr`].
+    fn parse_expr_primary(&mut self) -> Expr {
+        let start_pos = self.start_pos();
 
-        let kind = match token.kind() {
-            TokenKind::Literal(literal) => ExprKind::Literal(literal),
-            TokenKind::Ident(symbol) => ExprKind::Variable(symbol),
+        let kind = match self.peek().kind() {
+            TokenKind::Literal(literal) => {
+                self.bump();
+                ExprKind::Literal(literal)
+            }
+            TokenKind::Ident(symbol) => {
+                self.bump();
+                ExprKind::Variable(symbol)
+            }
             TokenKind::OpenParen => {
+                self.bump();
                 let expr = self.parse_expr();
                 self.expect(TokenType::CloseParen);
                 ExprKind::Paren(Box::new(expr))
             }
-            TokenKind::This => ExprKind::This,
+            TokenKind::Super => {
+                self.bump();
+                self.expect(TokenType::Dot);
+                let ident = self.parse_ident();
+                ExprKind::Super(ident)
+            }
+            TokenKind::This => {
+                self.bump();
+                ExprKind::This
+            }
             kind => {
-                self.report(Diag::ExpectedExpr(kind), token.span());
-                error_expr()
+                let span = self.peek().span();
+                return self.error_expr(Diag::ExpectedExpr(kind), span);
             }
         };
 
-        self.create_expr(kind, start)
+        self.make_expr(kind, start_pos)
     }
 
-    /// Creates a new [`Expr`] from an [`ExprKind`] and a start [`BytePos`].
-    fn create_expr(&self, kind: ExprKind, start: BytePos) -> Expr {
+    /// Parses and returns an [`Ident`].
+    fn parse_ident(&mut self) -> Ident {
+        let span = self.peek().span();
+
+        let symbol = if let TokenKind::Ident(symbol) = self.next_token.kind() {
+            self.bump();
+            symbol
+        } else {
+            let diag = Diag::UnexpectedToken(TokenType::Ident, self.next_token.kind());
+
+            if self.next_token.is_keyword() {
+                self.bump();
+                self.report_recovered(diag, span);
+            } else {
+                self.report(diag, span);
+            }
+
+            Symbol::ERROR
+        };
+
+        Ident { symbol, span }
+    }
+
+    /// Returns the next [`Token`]'s start [`BytePos`].
+    const fn start_pos(&self) -> BytePos {
+        self.peek().span().start()
+    }
+
+    /// Returns a new [`Span`] from a start [`BytePos`] to the previous
+    /// [`Token`]'s end [`BytePos`].
+    fn span_from(&self, start_pos: BytePos) -> Span {
+        Span::new(start_pos, self.prev_token_end_pos)
+    }
+
+    /// Returns a new [`Expr`] from an [`ExprKind`] and a start [`BytePos`].
+    fn make_expr(&self, kind: ExprKind, start_pos: BytePos) -> Expr {
+        let span = self.span_from(start_pos);
+        Expr { kind, span }
+    }
+
+    /// Reports a [`Diag`] at a [`Span`] and returns a new synthetic [`Expr`]
+    /// for error recovery.
+    fn error_expr(&mut self, diag: Diag, span: Span) -> Expr {
+        self.report(diag, span);
+
         Expr {
-            kind,
-            span: Span::new(start, self.pos),
+            kind: ExprKind::Variable(Symbol::ERROR),
+            span,
         }
     }
 
     /// Reports a [`Diag`] at a [`Span`].
     fn report(&mut self, diag: Diag, span: Span) {
+        self.report_recovered(diag, span);
+        self.bump(); // TODO: Replace with panic mode.
+    }
+
+    /// Reports a recovered [`Diag`] at a [`Span`].
+    fn report_recovered(&mut self, diag: Diag, span: Span) {
         self.lexer.log_mut().report(diag, span);
     }
 
-    /// Consumes and returns the next [`Token`].
-    fn bump(&mut self) -> Token {
-        self.pos = self.next_token.span().end();
-        mem::replace(&mut self.next_token, self.lexer.next_token())
+    /// Returns the next [`Token`] without consuming it.
+    const fn peek(&self) -> &Token {
+        &self.next_token
+    }
+
+    /// Consumes the next [`Token`].
+    fn bump(&mut self) {
+        self.prev_token_end_pos = self.peek().span().end();
+        self.next_token = self.lexer.next_token();
     }
 
     /// Consumes the next [`Token`] if it matches an expected [`TokenType`].
     /// This function returns [`true`] if a [`Token`] was consumed.
     fn eat(&mut self, token_type: TokenType) -> bool {
-        let is_match = self.next_token.token_type() == token_type;
+        let is_match = self.peek().token_type() == token_type;
 
         if is_match {
             self.bump();
@@ -113,14 +180,9 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
     fn expect(&mut self, token_type: TokenType) {
         if !self.eat(token_type) {
             self.report(
-                Diag::UnexpectedToken(token_type, self.next_token.kind()),
-                self.next_token.span(),
+                Diag::UnexpectedToken(token_type, self.peek().kind()),
+                self.peek().span(),
             );
         }
     }
-}
-
-/// Returns a new synthetic [`ExprKind`] for error recovery.
-const fn error_expr() -> ExprKind {
-    ExprKind::Literal(Literal::Nil)
 }

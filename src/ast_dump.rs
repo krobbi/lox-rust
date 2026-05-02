@@ -1,7 +1,7 @@
 use std::fmt::{self, Formatter};
 
 use crate::{
-    ast::{Ast, Expr, ExprKind},
+    ast::{Ast, Expr, ExprKind, Ident},
     render::{Render, RenderContext},
 };
 
@@ -44,6 +44,9 @@ enum Node<'ast> {
 
     /// An [`Expr`].
     Expr(&'ast Expr),
+
+    /// An [`Ident`].
+    Ident(&'ast Ident),
 }
 
 impl Node<'_> {
@@ -52,6 +55,7 @@ impl Node<'_> {
         match self {
             Self::Ast(ast) => vec![Node::Expr(&ast.0)],
             Self::Expr(expr) => expr_children(expr),
+            Self::Ident(_) => Vec::new(),
         }
     }
 }
@@ -60,6 +64,7 @@ impl Node<'_> {
 fn expr_children(expr: &Expr) -> Vec<Node<'_>> {
     match &expr.kind {
         ExprKind::Literal(_) | ExprKind::Variable(_) | ExprKind::This => Vec::new(),
+        ExprKind::Super(ident) => vec![Node::Ident(ident)],
         ExprKind::Paren(expr) => vec![Node::Expr(expr)],
     }
 }
@@ -69,6 +74,12 @@ impl Render for Node<'_> {
         match self {
             Self::Ast(_) => write!(f, "[Ast]"),
             Self::Expr(expr) => fmt_expr(expr, ctx, f),
+            Self::Ident(ident) => write!(
+                f,
+                "[Ident]{} {}",
+                ident.span.display(ctx),
+                ident.symbol.display(ctx)
+            ),
         }
     }
 }
@@ -82,6 +93,7 @@ fn fmt_expr(expr: &Expr, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> f
         ExprKind::Literal(literal) => write!(f, "Literal({})", literal.display(ctx)),
         ExprKind::Variable(symbol) => write!(f, "Variable({})", symbol.display(ctx)),
         ExprKind::This => write!(f, "This"),
+        ExprKind::Super(_) => write!(f, "Super"),
         ExprKind::Paren(_) => write!(f, "Paren"),
     }
 }

@@ -26,6 +26,19 @@ pub enum ExprKind {
     /// An instance.
     This,
 
+    /// A superclass method.
+    Super(Ident),
+
     /// A parenthesized [`Expr`].
     Paren(Box<Expr>),
+}
+
+/// An identifier [`Symbol`] with a [`Span`].
+#[derive(Debug)]
+pub struct Ident {
+    /// The [`Symbol`].
+    pub symbol: Symbol,
+
+    /// The [`Span`].
+    pub span: Span,
 }
