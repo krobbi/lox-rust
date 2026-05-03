@@ -34,6 +34,9 @@ pub enum ExprKind {
 
     /// A unary operation.
     Unary(UnOp, Box<Expr>),
+
+    /// A function or class call.
+    Call(Box<Expr>, Box<[Expr]>),
 }
 
 /// A unary operator.

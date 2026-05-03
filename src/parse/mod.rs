@@ -51,7 +51,7 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
 
     /// Parses and returns an [`Ident`].
     fn parse_ident(&mut self) -> Ident {
-        let span = self.peek().span();
+        let span = self.next_token.span();
 
         let symbol = if let TokenKind::Ident(symbol) = self.next_token.kind() {
             self.bump();
@@ -74,7 +74,7 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
 
     /// Returns the next [`Token`]'s start [`BytePos`].
     const fn start_pos(&self) -> BytePos {
-        self.peek().span().start()
+        self.next_token.span().start()
     }
 
     /// Returns a new [`Span`] from a start [`BytePos`] to the previous
@@ -83,21 +83,21 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
         Span::new(start_pos, self.prev_token_end_pos)
     }
 
-    /// Returns a reference to the next [`Token`].
-    const fn peek(&self) -> &Token {
-        &self.next_token
+    /// Returns the next [`Token`]'s [`TokenType`].
+    const fn peek(&self) -> TokenType {
+        self.next_token.token_type()
     }
 
     /// Consumes the next [`Token`].
     fn bump(&mut self) {
-        self.prev_token_end_pos = self.peek().span().end();
+        self.prev_token_end_pos = self.next_token.span().end();
         self.next_token = self.lexer.next_token();
     }
 
     /// Consumes the next [`Token`] if it matches an expected [`TokenType`].
     /// This function returns [`true`] if a [`Token`] was consumed.
     fn eat(&mut self, token_type: TokenType) -> bool {
-        let is_match = self.peek().token_type() == token_type;
+        let is_match = self.peek() == token_type;
 
         if is_match {
             self.bump();
@@ -111,8 +111,8 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
     fn expect(&mut self, token_type: TokenType) {
         if !self.eat(token_type) {
             self.report(
-                Diag::UnexpectedToken(token_type, self.peek().kind()),
-                self.peek().span(),
+                Diag::UnexpectedToken(token_type, self.next_token.kind()),
+                self.next_token.span(),
             );
         }
     }

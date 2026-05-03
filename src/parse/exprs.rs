@@ -18,7 +18,7 @@ impl Parser<'_, '_, '_> {
     fn parse_expr_unary(&mut self) -> Expr {
         let start_pos = self.start_pos();
 
-        let op = match self.peek().token_type() {
+        let op = match self.peek() {
             TokenType::Minus => UnOp::Minus,
             TokenType::Bang => UnOp::Not,
             _ => return self.parse_expr_call(),
@@ -31,14 +31,27 @@ impl Parser<'_, '_, '_> {
 
     /// Parses and returns a call [`Expr`].
     fn parse_expr_call(&mut self) -> Expr {
-        self.parse_expr_primary()
+        let start_pos = self.start_pos();
+        let mut lhs = self.parse_expr_primary();
+
+        loop {
+            let kind = match self.peek() {
+                TokenType::OpenParen => {
+                    let args = self.parse_args();
+                    ExprKind::Call(Box::new(lhs), args)
+                }
+                _ => break lhs,
+            };
+
+            lhs = self.make_expr(kind, start_pos);
+        }
     }
 
     /// Parses and returns a primary [`Expr`].
     fn parse_expr_primary(&mut self) -> Expr {
         let start_pos = self.start_pos();
 
-        let kind = match self.peek().kind() {
+        let kind = match self.next_token.kind() {
             TokenKind::Literal(literal) => {
                 self.bump();
                 ExprKind::Literal(literal)
@@ -64,12 +77,36 @@ impl Parser<'_, '_, '_> {
                 ExprKind::This
             }
             kind => {
-                let span = self.peek().span();
+                let span = self.next_token.span();
                 return self.error_expr(Diag::ExpectedExpr(kind), span);
             }
         };
 
         self.make_expr(kind, start_pos)
+    }
+
+    /// Parses and returns a boxed slice of argument [`Expr`]s.
+    fn parse_args(&mut self) -> Box<[Expr]> {
+        debug_assert_eq!(
+            self.peek(),
+            TokenType::OpenParen,
+            "parsed arguments without opening parenthesis"
+        );
+
+        self.bump();
+
+        if self.eat(TokenType::CloseParen) {
+            return Box::new([]);
+        }
+
+        let mut args = vec![self.parse_expr()];
+
+        while self.eat(TokenType::Comma) {
+            args.push(self.parse_expr());
+        }
+
+        self.expect(TokenType::CloseParen);
+        args.into_boxed_slice()
     }
 
     /// Returns a new [`Expr`] from an [`ExprKind`] and a start [`BytePos`].

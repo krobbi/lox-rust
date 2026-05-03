@@ -17,10 +17,10 @@ pub fn print_ast(ast: &Ast, ctx: RenderContext<'_, '_>) {
 fn print_node(node: Node<'_>, ctx: RenderContext<'_, '_>, flags: &mut Vec<bool>) {
     for (level, flag) in flags.iter().copied().enumerate() {
         let indent = match (level == flags.len() - 1, flag) {
-            (false, false) => '│',
-            (false, true) => ' ',
-            (true, false) => '├',
-            (true, true) => '└',
+            (false, false) => "│ ",
+            (false, true) => "  ",
+            (true, false) => "├─",
+            (true, true) => "└─",
         };
 
         print!("{indent}");
@@ -66,6 +66,15 @@ fn expr_children(expr: &Expr) -> Vec<Node<'_>> {
         ExprKind::Literal(_) | ExprKind::Variable(_) | ExprKind::This => Vec::new(),
         ExprKind::Super(ident) => vec![Node::Ident(ident)],
         ExprKind::Paren(expr) | ExprKind::Unary(_, expr) => vec![Node::Expr(expr)],
+        ExprKind::Call(callee, args) => {
+            let mut children = vec![Node::Expr(callee)];
+
+            for arg in args {
+                children.push(Node::Expr(arg));
+            }
+
+            children
+        }
     }
 }
 
@@ -96,6 +105,7 @@ fn fmt_expr(expr: &Expr, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> f
         ExprKind::Super(_) => write!(f, "Super"),
         ExprKind::Paren(_) => write!(f, "Paren"),
         ExprKind::Unary(op, _) => write!(f, "Unary({})", unary_symbol(*op)),
+        ExprKind::Call(_, _) => write!(f, "Call"),
     }
 }
 
