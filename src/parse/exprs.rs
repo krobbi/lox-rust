@@ -143,7 +143,7 @@ impl Parser<'_, '_, '_> {
     /// a start [`BytePos`].
     fn make_infix_expr(&mut self, op: InfixOp, lhs: Expr, rhs: Expr, start_pos: BytePos) -> Expr {
         let kind = match op {
-            InfixOp::Assign => return self.make_assign_expr(&lhs, rhs, start_pos),
+            InfixOp::Assign => return self.make_assign_expr(lhs, rhs, start_pos),
             InfixOp::Binary(op) => ExprKind::Binary(op, Box::new(lhs), Box::new(rhs)),
             InfixOp::Logic(op) => ExprKind::Logic(op, Box::new(lhs), Box::new(rhs)),
         };
@@ -153,20 +153,18 @@ impl Parser<'_, '_, '_> {
 
     /// Returns a new assignment [`Expr`] from operand [`Expr`]s and a start
     /// [`BytePos`].
-    fn make_assign_expr(&mut self, lhs: &Expr, rhs: Expr, start_pos: BytePos) -> Expr {
-        // TODO: Setter expressions.
-        #[expect(
-            clippy::single_match_else,
-            reason = "setter expressions will be added later"
-        )]
+    fn make_assign_expr(&mut self, lhs: Expr, rhs: Expr, start_pos: BytePos) -> Expr {
         let kind = match lhs.kind {
-            ExprKind::Variable(symbol) => ExprKind::Assign(
+            ExprKind::Variable(symbol) => ExprKind::AssignVar(
                 Ident {
                     symbol,
                     span: lhs.span,
                 },
                 Box::new(rhs),
             ),
+            ExprKind::Property(instance, name) => {
+                ExprKind::AssignField(instance, name, Box::new(rhs))
+            }
             _ => {
                 self.report_recovered(Diag::InvalidAssign, lhs.span);
                 ExprKind::Variable(Symbol::ERROR)

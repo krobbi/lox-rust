@@ -17,8 +17,11 @@ pub struct Expr {
 /// An [`Expr`]'s kind.
 #[derive(Debug)]
 pub enum ExprKind {
-    /// An assignment.
-    Assign(Ident, Box<Expr>),
+    /// A variable assignment.
+    AssignVar(Ident, Box<Expr>),
+
+    /// A field assignment.
+    AssignField(Box<Expr>, Ident, Box<Expr>),
 
     /// A [`Literal`].
     Literal(Literal),
