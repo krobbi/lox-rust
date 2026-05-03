@@ -1,7 +1,7 @@
 use std::fmt::{self, Formatter};
 
 use crate::{
-    ast::{Ast, BinOp, Expr, ExprKind, Ident, LogicOp, UnOp},
+    ast::{Ast, BinOp, Expr, ExprKind, Ident, LogicOp, Stmt, StmtKind, UnOp},
     render::{Render, RenderContext},
 };
 
@@ -42,6 +42,9 @@ enum Node<'ast> {
     /// An [`Ast`].
     Ast(&'ast Ast),
 
+    /// A [`Stmt`].
+    Stmt(&'ast Stmt),
+
     /// An [`Expr`].
     Expr(&'ast Expr),
 
@@ -53,14 +56,46 @@ impl Node<'_> {
     /// Returns the `Node`'s child `Node`s.
     fn children(self) -> Vec<Self> {
         match self {
-            Self::Ast(ast) => vec![Node::Expr(&ast.0)],
+            Self::Ast(ast) => {
+                let mut children = Vec::new();
+
+                for decl in &ast.0 {
+                    children.push(Node::Stmt(decl));
+                }
+
+                children
+            }
+            Self::Stmt(stmt) => stmt_children(stmt),
             Self::Expr(expr) => expr_children(expr),
             Self::Ident(_) => Vec::new(),
         }
     }
 }
 
-/// Rerturns an [`Expr`]'s child `Node`s.
+impl Render for Node<'_> {
+    fn fmt(&self, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Ast(_) => write!(f, "[Ast]"),
+            Self::Stmt(stmt) => fmt_stmt(stmt, ctx, f),
+            Self::Expr(expr) => fmt_expr(expr, ctx, f),
+            Self::Ident(ident) => write!(
+                f,
+                "[Ident]{} {}",
+                ident.span.display(ctx),
+                ident.symbol.display(ctx)
+            ),
+        }
+    }
+}
+
+/// Returns a [`Stmt`]'s child [`Node`]s.
+fn stmt_children(stmt: &Stmt) -> Vec<Node<'_>> {
+    match &stmt.kind {
+        StmtKind::Expr(expr) => vec![Node::Expr(expr)],
+    }
+}
+
+/// Returns an [`Expr`]'s child [`Node`]s.
 fn expr_children(expr: &Expr) -> Vec<Node<'_>> {
     match &expr.kind {
         ExprKind::AssignVar(ident, expr) => vec![Node::Ident(ident), Node::Expr(expr)],
@@ -86,18 +121,13 @@ fn expr_children(expr: &Expr) -> Vec<Node<'_>> {
     }
 }
 
-impl Render for Node<'_> {
-    fn fmt(&self, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Ast(_) => write!(f, "[Ast]"),
-            Self::Expr(expr) => fmt_expr(expr, ctx, f),
-            Self::Ident(ident) => write!(
-                f,
-                "[Ident]{} {}",
-                ident.span.display(ctx),
-                ident.symbol.display(ctx)
-            ),
-        }
+/// Formats a [`Stmt`] with a [`RenderContext`] and a [`Formatter`]. This
+/// function returns a [`fmt::Error`] if a formatting error occurred.
+fn fmt_stmt(stmt: &Stmt, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> fmt::Result {
+    write!(f, "[Stmt]{} ", stmt.span.display(ctx))?;
+
+    match &stmt.kind {
+        StmtKind::Expr(_) => write!(f, "Expr"),
     }
 }
 

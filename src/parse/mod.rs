@@ -1,7 +1,8 @@
 mod exprs;
+mod stmts;
 
 use crate::{
-    ast::{Ast, Ident},
+    ast::{Ast, Ident, Stmt},
     diagnostics::Diag,
     lex::Lexer,
     log::Log,
@@ -27,6 +28,9 @@ struct Parser<'src, 'sym, 'log> {
 
     /// The previous [`Token`]'s end [`BytePos`].
     prev_token_end_pos: BytePos,
+
+    /// Whether the `Parser` is in panic mode.
+    is_panicking: bool,
 }
 
 impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
@@ -40,13 +44,27 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
             lexer,
             next_token,
             prev_token_end_pos: BytePos::new(),
+            is_panicking: false,
         }
     }
 
     /// Parses and returns an [`Ast`].
     fn parse_ast(&mut self) -> Ast {
-        let expr = self.parse_expr();
-        Ast(expr)
+        let mut decls = Vec::new();
+
+        while self.peek() != TokenType::Eof {
+            let decl = self.parse_decl();
+            decls.push(decl);
+        }
+
+        Ast(decls.into_boxed_slice())
+    }
+
+    /// Parses and returns a declaration [`Stmt`].
+    fn parse_decl(&mut self) -> Stmt {
+        let stmt = self.parse_stmt();
+        self.synchronize();
+        stmt
     }
 
     /// Parses and returns an [`Ident`].
@@ -80,7 +98,7 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
     /// Returns a new [`Span`] from a start [`BytePos`] to the previous
     /// [`Token`]'s end [`BytePos`].
     fn span_from(&self, start_pos: BytePos) -> Span {
-        Span::new(start_pos, self.prev_token_end_pos)
+        Span::new(start_pos, self.prev_token_end_pos.max(start_pos))
     }
 
     /// Returns the next [`Token`]'s [`TokenType`].
@@ -120,11 +138,44 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
     /// Reports a [`Diag`] at a [`Span`].
     fn report(&mut self, diag: Diag, span: Span) {
         self.report_recovered(diag, span);
-        self.bump(); // TODO: Replace with panic mode.
+        self.is_panicking = true;
     }
 
     /// Reports a recovered [`Diag`] at a [`Span`].
     fn report_recovered(&mut self, diag: Diag, span: Span) {
+        if self.is_panicking {
+            return;
+        }
+
         self.lexer.log_mut().report(diag, span);
+    }
+
+    /// Synchronizes the `Parser` out of panic mode.
+    fn synchronize(&mut self) {
+        if !self.is_panicking {
+            return;
+        }
+
+        while self.peek() != TokenType::Eof {
+            self.bump();
+
+            match self.peek() {
+                TokenType::Semi => {
+                    self.bump();
+                    break;
+                }
+                TokenType::Class
+                | TokenType::For
+                | TokenType::Fun
+                | TokenType::If
+                | TokenType::Print
+                | TokenType::Return
+                | TokenType::Var
+                | TokenType::While => break,
+                _ => (),
+            }
+        }
+
+        self.is_panicking = false;
     }
 }

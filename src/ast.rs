@@ -2,7 +2,24 @@ use crate::{spans::Span, symbols::Symbol, tokens::Literal};
 
 /// An abstract syntax tree.
 #[derive(Debug)]
-pub struct Ast(pub Expr);
+pub struct Ast(pub Box<[Stmt]>);
+
+/// A statement.
+#[derive(Debug)]
+pub struct Stmt {
+    /// The [`StmtKind`].
+    pub kind: StmtKind,
+
+    /// The [`Span`].
+    pub span: Span,
+}
+
+/// A [`Stmt`]'s kind.
+#[derive(Debug)]
+pub enum StmtKind {
+    /// An [`Expr`].
+    Expr(Box<Expr>),
+}
 
 /// An expression.
 #[derive(Debug)]
