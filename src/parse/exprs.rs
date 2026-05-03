@@ -40,6 +40,11 @@ impl Parser<'_, '_, '_> {
                     let args = self.parse_args();
                     ExprKind::Call(Box::new(lhs), args)
                 }
+                TokenType::Dot => {
+                    self.bump();
+                    let ident = self.parse_ident();
+                    ExprKind::Property(Box::new(lhs), ident)
+                }
                 _ => break lhs,
             };
 

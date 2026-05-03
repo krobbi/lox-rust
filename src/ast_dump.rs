@@ -64,6 +64,7 @@ impl Node<'_> {
 fn expr_children(expr: &Expr) -> Vec<Node<'_>> {
     match &expr.kind {
         ExprKind::Literal(_) | ExprKind::Variable(_) | ExprKind::This => Vec::new(),
+        ExprKind::Property(expr, ident) => vec![Node::Expr(expr), Node::Ident(ident)],
         ExprKind::Super(ident) => vec![Node::Ident(ident)],
         ExprKind::Paren(expr) | ExprKind::Unary(_, expr) => vec![Node::Expr(expr)],
         ExprKind::Call(callee, args) => {
@@ -101,6 +102,7 @@ fn fmt_expr(expr: &Expr, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> f
     match &expr.kind {
         ExprKind::Literal(literal) => write!(f, "Literal({})", literal.display(ctx)),
         ExprKind::Variable(symbol) => write!(f, "Variable({})", symbol.display(ctx)),
+        ExprKind::Property(_, _) => write!(f, "Property"),
         ExprKind::This => write!(f, "This"),
         ExprKind::Super(_) => write!(f, "Super"),
         ExprKind::Paren(_) => write!(f, "Paren"),

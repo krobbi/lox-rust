@@ -23,6 +23,9 @@ pub enum ExprKind {
     /// A variable.
     Variable(Symbol),
 
+    /// A property.
+    Property(Box<Expr>, Ident),
+
     /// An instance.
     This,
 
