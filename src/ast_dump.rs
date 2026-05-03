@@ -1,7 +1,7 @@
 use std::fmt::{self, Formatter};
 
 use crate::{
-    ast::{Ast, Expr, ExprKind, Ident, UnOp},
+    ast::{Ast, BinOp, Expr, ExprKind, Ident, UnOp},
     render::{Render, RenderContext},
 };
 
@@ -67,6 +67,7 @@ fn expr_children(expr: &Expr) -> Vec<Node<'_>> {
         ExprKind::Property(expr, ident) => vec![Node::Expr(expr), Node::Ident(ident)],
         ExprKind::Super(ident) => vec![Node::Ident(ident)],
         ExprKind::Paren(expr) | ExprKind::Unary(_, expr) => vec![Node::Expr(expr)],
+        ExprKind::Binary(_, lhs, rhs) => vec![Node::Expr(lhs), Node::Expr(rhs)],
         ExprKind::Call(callee, args) => {
             let mut children = vec![Node::Expr(callee)];
 
@@ -107,6 +108,7 @@ fn fmt_expr(expr: &Expr, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> f
         ExprKind::Super(_) => write!(f, "Super"),
         ExprKind::Paren(_) => write!(f, "Paren"),
         ExprKind::Unary(op, _) => write!(f, "Unary({})", unary_symbol(*op)),
+        ExprKind::Binary(op, _, _) => write!(f, "Binary({})", binary_symbol(*op)),
         ExprKind::Call(_, _) => write!(f, "Call"),
     }
 }
@@ -116,5 +118,21 @@ const fn unary_symbol(op: UnOp) -> char {
     match op {
         UnOp::Minus => '-',
         UnOp::Not => '!',
+    }
+}
+
+/// Returns a string slice for displaying a [`BinOp`].
+const fn binary_symbol(op: BinOp) -> &'static str {
+    match op {
+        BinOp::Add => "+",
+        BinOp::Subtract => "-",
+        BinOp::Multiply => "*",
+        BinOp::Divide => "/",
+        BinOp::Equal => "==",
+        BinOp::NotEqual => "!=",
+        BinOp::Greater => ">",
+        BinOp::GreaterEqual => ">=",
+        BinOp::Less => "<",
+        BinOp::LessEqual => "<=",
     }
 }

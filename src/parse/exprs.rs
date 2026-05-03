@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Expr, ExprKind, UnOp},
+    ast::{BinOp, Expr, ExprKind, UnOp},
     diagnostics::Diag,
     spans::{BytePos, Span},
     symbols::Symbol,
@@ -11,7 +11,27 @@ use super::Parser;
 impl Parser<'_, '_, '_> {
     /// Parses and returns an [`Expr`].
     pub fn parse_expr(&mut self) -> Expr {
-        self.parse_expr_unary()
+        self.parse_expr_infix(0)
+    }
+
+    /// Parses and returns an infix [`Expr`].
+    fn parse_expr_infix(&mut self, min_precedence: u8) -> Expr {
+        let start_pos = self.start_pos();
+        let mut lhs = self.parse_expr_unary();
+
+        while let Some(op) = InfixOp::from_token_type(self.peek()) {
+            let precedence = op.precedence();
+
+            if precedence < min_precedence {
+                break;
+            }
+
+            self.bump();
+            let rhs = self.parse_expr_infix(precedence + 1);
+            lhs = self.make_expr(op.make_expr_kind(lhs, rhs), start_pos);
+        }
+
+        lhs
     }
 
     /// Parses and returns a unary [`Expr`].
@@ -130,4 +150,71 @@ impl Parser<'_, '_, '_> {
             span,
         }
     }
+}
+
+/// An infix operator.
+#[derive(Clone, Copy)]
+enum InfixOp {
+    /// A [`BinOp`].
+    Binary(BinOp),
+}
+
+impl InfixOp {
+    /// Creates a new `InfixOp` from a [`TokenType`]. This function returns
+    /// [`None`] if the [`TokenType`] does not correspond to an `InfixOp`.
+    const fn from_token_type(token_type: TokenType) -> Option<Self> {
+        let op = match token_type {
+            TokenType::Minus => BinOp::Subtract,
+            TokenType::Plus => BinOp::Add,
+            TokenType::Slash => BinOp::Divide,
+            TokenType::Star => BinOp::Multiply,
+            TokenType::BangEquals => BinOp::NotEqual,
+            TokenType::EqualsEquals => BinOp::Equal,
+            TokenType::Greater => BinOp::Greater,
+            TokenType::GreaterEquals => BinOp::GreaterEqual,
+            TokenType::Less => BinOp::Less,
+            TokenType::LessEquals => BinOp::LessEqual,
+            _ => return None,
+        };
+
+        Some(Self::Binary(op))
+    }
+
+    /// Returns the `InfixOp`'s precedence level.
+    const fn precedence(self) -> u8 {
+        let precedence = match self {
+            Self::Binary(BinOp::Add | BinOp::Subtract) => Precedence::Sum,
+            Self::Binary(BinOp::Multiply | BinOp::Divide) => Precedence::Term,
+            Self::Binary(BinOp::Equal | BinOp::NotEqual) => Precedence::Equality,
+            Self::Binary(BinOp::Greater | BinOp::GreaterEqual | BinOp::Less | BinOp::LessEqual) => {
+                Precedence::Comparison
+            }
+        };
+
+        precedence as u8
+    }
+
+    /// Returns a new [`ExprKind`] from the `InfixOp` and operand [`Expr`]s.
+    fn make_expr_kind(self, lhs: Expr, rhs: Expr) -> ExprKind {
+        match self {
+            Self::Binary(op) => ExprKind::Binary(op, Box::new(lhs), Box::new(rhs)),
+        }
+    }
+}
+
+/// An [`InfixOp`]'s precedence level.
+#[derive(Clone, Copy)]
+#[repr(u8)]
+enum Precedence {
+    /// An equality test.
+    Equality,
+
+    /// A comparison.
+    Comparison,
+
+    /// An addition or subtraction.
+    Sum,
+
+    /// A multiplication or division.
+    Term,
 }

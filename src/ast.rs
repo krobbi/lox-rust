@@ -38,8 +38,45 @@ pub enum ExprKind {
     /// A unary operation.
     Unary(UnOp, Box<Expr>),
 
+    /// A binary operation.
+    Binary(BinOp, Box<Expr>, Box<Expr>),
+
     /// A function or class call.
     Call(Box<Expr>, Box<[Expr]>),
+}
+
+/// A binary operator.
+#[derive(Clone, Copy, Debug)]
+pub enum BinOp {
+    /// An addition or string concatenation.
+    Add,
+
+    /// A subtraction.
+    Subtract,
+
+    /// A multiplication.
+    Multiply,
+
+    /// A division.
+    Divide,
+
+    /// An equality comparison.
+    Equal,
+
+    /// An inequality comparison.
+    NotEqual,
+
+    /// A greater than comparison.
+    Greater,
+
+    /// A greater than or equal to comparison.
+    GreaterEqual,
+
+    /// A less than comparison.
+    Less,
+
+    /// A less than or equal to comparison.
+    LessEqual,
 }
 
 /// A unary operator.
