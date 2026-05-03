@@ -1,7 +1,7 @@
 use std::fmt::{self, Formatter};
 
 use crate::{
-    ast::{Ast, BinOp, Expr, ExprKind, Ident, UnOp},
+    ast::{Ast, BinOp, Expr, ExprKind, Ident, LogicOp, UnOp},
     render::{Render, RenderContext},
 };
 
@@ -67,7 +67,9 @@ fn expr_children(expr: &Expr) -> Vec<Node<'_>> {
         ExprKind::Property(expr, ident) => vec![Node::Expr(expr), Node::Ident(ident)],
         ExprKind::Super(ident) => vec![Node::Ident(ident)],
         ExprKind::Paren(expr) | ExprKind::Unary(_, expr) => vec![Node::Expr(expr)],
-        ExprKind::Binary(_, lhs, rhs) => vec![Node::Expr(lhs), Node::Expr(rhs)],
+        ExprKind::Binary(_, lhs, rhs) | ExprKind::Logic(_, lhs, rhs) => {
+            vec![Node::Expr(lhs), Node::Expr(rhs)]
+        }
         ExprKind::Call(callee, args) => {
             let mut children = vec![Node::Expr(callee)];
 
@@ -109,6 +111,7 @@ fn fmt_expr(expr: &Expr, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> f
         ExprKind::Paren(_) => write!(f, "Paren"),
         ExprKind::Unary(op, _) => write!(f, "Unary({})", unary_symbol(*op)),
         ExprKind::Binary(op, _, _) => write!(f, "Binary({})", binary_symbol(*op)),
+        ExprKind::Logic(op, _, _) => write!(f, "Logic({})", logic_symbol(*op)),
         ExprKind::Call(_, _) => write!(f, "Call"),
     }
 }
@@ -134,5 +137,13 @@ const fn binary_symbol(op: BinOp) -> &'static str {
         BinOp::GreaterEqual => ">=",
         BinOp::Less => "<",
         BinOp::LessEqual => "<=",
+    }
+}
+
+/// Returns a string slice for displaying a [`LogicOp`].
+const fn logic_symbol(op: LogicOp) -> &'static str {
+    match op {
+        LogicOp::And => "and",
+        LogicOp::Or => "or",
     }
 }

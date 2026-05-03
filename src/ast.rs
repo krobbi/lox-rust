@@ -41,8 +41,21 @@ pub enum ExprKind {
     /// A binary operation.
     Binary(BinOp, Box<Expr>, Box<Expr>),
 
+    /// A logical operation.
+    Logic(LogicOp, Box<Expr>, Box<Expr>),
+
     /// A function or class call.
     Call(Box<Expr>, Box<[Expr]>),
+}
+
+/// A unary operator.
+#[derive(Clone, Copy, Debug)]
+pub enum UnOp {
+    /// An arithmetic negation.
+    Minus,
+
+    /// A logical negation.
+    Not,
 }
 
 /// A binary operator.
@@ -79,14 +92,14 @@ pub enum BinOp {
     LessEqual,
 }
 
-/// A unary operator.
+/// A logical operator.
 #[derive(Clone, Copy, Debug)]
-pub enum UnOp {
-    /// An arithmetic negation.
-    Minus,
+pub enum LogicOp {
+    /// A logical and.
+    And,
 
-    /// A logical negation.
-    Not,
+    /// A logical or.
+    Or,
 }
 
 /// An identifier [`Symbol`] with a [`Span`].

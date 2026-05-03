@@ -1,5 +1,5 @@
 use crate::{
-    ast::{BinOp, Expr, ExprKind, UnOp},
+    ast::{BinOp, Expr, ExprKind, LogicOp, UnOp},
     diagnostics::Diag,
     spans::{BytePos, Span},
     symbols::Symbol,
@@ -157,6 +157,9 @@ impl Parser<'_, '_, '_> {
 enum InfixOp {
     /// A [`BinOp`].
     Binary(BinOp),
+
+    /// A [`LogicOp`].
+    Logic(LogicOp),
 }
 
 impl InfixOp {
@@ -164,20 +167,22 @@ impl InfixOp {
     /// [`None`] if the [`TokenType`] does not correspond to an `InfixOp`.
     const fn from_token_type(token_type: TokenType) -> Option<Self> {
         let op = match token_type {
-            TokenType::Minus => BinOp::Subtract,
-            TokenType::Plus => BinOp::Add,
-            TokenType::Slash => BinOp::Divide,
-            TokenType::Star => BinOp::Multiply,
-            TokenType::BangEquals => BinOp::NotEqual,
-            TokenType::EqualsEquals => BinOp::Equal,
-            TokenType::Greater => BinOp::Greater,
-            TokenType::GreaterEquals => BinOp::GreaterEqual,
-            TokenType::Less => BinOp::Less,
-            TokenType::LessEquals => BinOp::LessEqual,
+            TokenType::Minus => Self::Binary(BinOp::Subtract),
+            TokenType::Plus => Self::Binary(BinOp::Add),
+            TokenType::Slash => Self::Binary(BinOp::Divide),
+            TokenType::Star => Self::Binary(BinOp::Multiply),
+            TokenType::BangEquals => Self::Binary(BinOp::NotEqual),
+            TokenType::EqualsEquals => Self::Binary(BinOp::Equal),
+            TokenType::Greater => Self::Binary(BinOp::Greater),
+            TokenType::GreaterEquals => Self::Binary(BinOp::GreaterEqual),
+            TokenType::Less => Self::Binary(BinOp::Less),
+            TokenType::LessEquals => Self::Binary(BinOp::LessEqual),
+            TokenType::And => Self::Logic(LogicOp::And),
+            TokenType::Or => Self::Logic(LogicOp::Or),
             _ => return None,
         };
 
-        Some(Self::Binary(op))
+        Some(op)
     }
 
     /// Returns the `InfixOp`'s precedence level.
@@ -189,6 +194,8 @@ impl InfixOp {
             Self::Binary(BinOp::Greater | BinOp::GreaterEqual | BinOp::Less | BinOp::LessEqual) => {
                 Precedence::Comparison
             }
+            Self::Logic(LogicOp::And) => Precedence::And,
+            Self::Logic(LogicOp::Or) => Precedence::Or,
         };
 
         precedence as u8
@@ -198,6 +205,7 @@ impl InfixOp {
     fn make_expr_kind(self, lhs: Expr, rhs: Expr) -> ExprKind {
         match self {
             Self::Binary(op) => ExprKind::Binary(op, Box::new(lhs), Box::new(rhs)),
+            Self::Logic(op) => ExprKind::Logic(op, Box::new(lhs), Box::new(rhs)),
         }
     }
 }
@@ -206,6 +214,12 @@ impl InfixOp {
 #[derive(Clone, Copy)]
 #[repr(u8)]
 enum Precedence {
+    /// A logical or.
+    Or,
+
+    /// A logical and.
+    And,
+
     /// An equality test.
     Equality,
 
