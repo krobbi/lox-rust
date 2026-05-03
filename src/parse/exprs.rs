@@ -1,5 +1,5 @@
 use crate::{
-    ast::{BinOp, Expr, ExprKind, LogicOp, UnOp},
+    ast::{BinOp, Expr, ExprKind, Ident, LogicOp, UnOp},
     diagnostics::Diag,
     spans::{BytePos, Span},
     symbols::Symbol,
@@ -26,9 +26,14 @@ impl Parser<'_, '_, '_> {
                 break;
             }
 
+            let next_min_precedence = match op.associativity() {
+                Associativity::Left => precedence + 1,
+                Associativity::Right => precedence,
+            };
+
             self.bump();
-            let rhs = self.parse_expr_infix(precedence + 1);
-            lhs = self.make_expr(op.make_expr_kind(lhs, rhs), start_pos);
+            let rhs = self.parse_expr_infix(next_min_precedence);
+            lhs = self.make_infix_expr(op, lhs, rhs, start_pos);
         }
 
         lhs
@@ -134,6 +139,43 @@ impl Parser<'_, '_, '_> {
         args.into_boxed_slice()
     }
 
+    /// Returns a new infix [`Expr`] from an [`InfixOp`], operand [`Expr`]s, and
+    /// a start [`BytePos`].
+    fn make_infix_expr(&mut self, op: InfixOp, lhs: Expr, rhs: Expr, start_pos: BytePos) -> Expr {
+        let kind = match op {
+            InfixOp::Assign => return self.make_assign_expr(&lhs, rhs, start_pos),
+            InfixOp::Binary(op) => ExprKind::Binary(op, Box::new(lhs), Box::new(rhs)),
+            InfixOp::Logic(op) => ExprKind::Logic(op, Box::new(lhs), Box::new(rhs)),
+        };
+
+        self.make_expr(kind, start_pos)
+    }
+
+    /// Returns a new assignment [`Expr`] from operand [`Expr`]s and a start
+    /// [`BytePos`].
+    fn make_assign_expr(&mut self, lhs: &Expr, rhs: Expr, start_pos: BytePos) -> Expr {
+        // TODO: Setter expressions.
+        #[expect(
+            clippy::single_match_else,
+            reason = "setter expressions will be added later"
+        )]
+        let kind = match lhs.kind {
+            ExprKind::Variable(symbol) => ExprKind::Assign(
+                Ident {
+                    symbol,
+                    span: lhs.span,
+                },
+                Box::new(rhs),
+            ),
+            _ => {
+                self.report_recovered(Diag::InvalidAssign, lhs.span);
+                ExprKind::Variable(Symbol::ERROR)
+            }
+        };
+
+        self.make_expr(kind, start_pos)
+    }
+
     /// Returns a new [`Expr`] from an [`ExprKind`] and a start [`BytePos`].
     fn make_expr(&self, kind: ExprKind, start_pos: BytePos) -> Expr {
         let span = self.span_from(start_pos);
@@ -155,6 +197,9 @@ impl Parser<'_, '_, '_> {
 /// An infix operator.
 #[derive(Clone, Copy)]
 enum InfixOp {
+    /// An assignment operator.
+    Assign,
+
     /// A [`BinOp`].
     Binary(BinOp),
 
@@ -172,6 +217,7 @@ impl InfixOp {
             TokenType::Slash => Self::Binary(BinOp::Divide),
             TokenType::Star => Self::Binary(BinOp::Multiply),
             TokenType::BangEquals => Self::Binary(BinOp::NotEqual),
+            TokenType::Equals => Self::Assign,
             TokenType::EqualsEquals => Self::Binary(BinOp::Equal),
             TokenType::Greater => Self::Binary(BinOp::Greater),
             TokenType::GreaterEquals => Self::Binary(BinOp::GreaterEqual),
@@ -188,6 +234,7 @@ impl InfixOp {
     /// Returns the `InfixOp`'s precedence level.
     const fn precedence(self) -> u8 {
         let precedence = match self {
+            Self::Assign => Precedence::Assign,
             Self::Binary(BinOp::Add | BinOp::Subtract) => Precedence::Sum,
             Self::Binary(BinOp::Multiply | BinOp::Divide) => Precedence::Term,
             Self::Binary(BinOp::Equal | BinOp::NotEqual) => Precedence::Equality,
@@ -201,11 +248,11 @@ impl InfixOp {
         precedence as u8
     }
 
-    /// Returns a new [`ExprKind`] from the `InfixOp` and operand [`Expr`]s.
-    fn make_expr_kind(self, lhs: Expr, rhs: Expr) -> ExprKind {
+    /// Returns the `InfixOp`'s [`Associativity`].
+    const fn associativity(self) -> Associativity {
         match self {
-            Self::Binary(op) => ExprKind::Binary(op, Box::new(lhs), Box::new(rhs)),
-            Self::Logic(op) => ExprKind::Logic(op, Box::new(lhs), Box::new(rhs)),
+            Self::Assign => Associativity::Right,
+            Self::Binary(_) | Self::Logic(_) => Associativity::Left,
         }
     }
 }
@@ -214,6 +261,9 @@ impl InfixOp {
 #[derive(Clone, Copy)]
 #[repr(u8)]
 enum Precedence {
+    /// An assignment.
+    Assign,
+
     /// A logical or.
     Or,
 
@@ -231,4 +281,13 @@ enum Precedence {
 
     /// A multiplication or division.
     Term,
+}
+
+/// An [`InfixOp`]'s associativity.
+enum Associativity {
+    /// Left to right.
+    Left,
+
+    /// Right to left.
+    Right,
 }

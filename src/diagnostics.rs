@@ -28,6 +28,9 @@ pub enum Diag {
     /// A [`TokenKind`] which does not begin an [`Expr`][crate::ast::Expr] was
     /// encountered.
     ExpectedExpr(TokenKind),
+
+    /// An invalid assignment target was used.
+    InvalidAssign,
 }
 
 impl Render for Diag {
@@ -49,6 +52,7 @@ impl Render for Diag {
                 token_type.display(ctx),
                 kind.display(ctx)
             ),
+            Self::InvalidAssign => write!(f, "This is not a valid assignment target."),
         }
     }
 }
