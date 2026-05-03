@@ -96,7 +96,7 @@ impl Token {
     /// Returns [`true`] if the `Token` is a keyword.
     pub const fn is_keyword(&self) -> bool {
         matches!(
-            self.kind(),
+            self.kind,
             TokenKind::Literal(Literal::Nil | Literal::Bool(_))
                 | TokenKind::And
                 | TokenKind::Class
