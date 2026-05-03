@@ -1,5 +1,7 @@
+mod exprs;
+
 use crate::{
-    ast::{Ast, Expr, ExprKind, Ident},
+    ast::{Ast, Ident},
     diagnostics::Diag,
     lex::Lexer,
     log::Log,
@@ -47,49 +49,6 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
         Ast(expr)
     }
 
-    /// Parses and returns an [`Expr`].
-    fn parse_expr(&mut self) -> Expr {
-        self.parse_expr_primary()
-    }
-
-    /// Parses and returns a primary [`Expr`].
-    fn parse_expr_primary(&mut self) -> Expr {
-        let start_pos = self.start_pos();
-
-        let kind = match self.peek().kind() {
-            TokenKind::Literal(literal) => {
-                self.bump();
-                ExprKind::Literal(literal)
-            }
-            TokenKind::Ident(symbol) => {
-                self.bump();
-                ExprKind::Variable(symbol)
-            }
-            TokenKind::OpenParen => {
-                self.bump();
-                let expr = self.parse_expr();
-                self.expect(TokenType::CloseParen);
-                ExprKind::Paren(Box::new(expr))
-            }
-            TokenKind::Super => {
-                self.bump();
-                self.expect(TokenType::Dot);
-                let ident = self.parse_ident();
-                ExprKind::Super(ident)
-            }
-            TokenKind::This => {
-                self.bump();
-                ExprKind::This
-            }
-            kind => {
-                let span = self.peek().span();
-                return self.error_expr(Diag::ExpectedExpr(kind), span);
-            }
-        };
-
-        self.make_expr(kind, start_pos)
-    }
-
     /// Parses and returns an [`Ident`].
     fn parse_ident(&mut self) -> Ident {
         let span = self.peek().span();
@@ -124,35 +83,7 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
         Span::new(start_pos, self.prev_token_end_pos)
     }
 
-    /// Returns a new [`Expr`] from an [`ExprKind`] and a start [`BytePos`].
-    fn make_expr(&self, kind: ExprKind, start_pos: BytePos) -> Expr {
-        let span = self.span_from(start_pos);
-        Expr { kind, span }
-    }
-
-    /// Reports a [`Diag`] at a [`Span`] and returns a new synthetic [`Expr`]
-    /// for error recovery.
-    fn error_expr(&mut self, diag: Diag, span: Span) -> Expr {
-        self.report(diag, span);
-
-        Expr {
-            kind: ExprKind::Variable(Symbol::ERROR),
-            span,
-        }
-    }
-
-    /// Reports a [`Diag`] at a [`Span`].
-    fn report(&mut self, diag: Diag, span: Span) {
-        self.report_recovered(diag, span);
-        self.bump(); // TODO: Replace with panic mode.
-    }
-
-    /// Reports a recovered [`Diag`] at a [`Span`].
-    fn report_recovered(&mut self, diag: Diag, span: Span) {
-        self.lexer.log_mut().report(diag, span);
-    }
-
-    /// Returns the next [`Token`] without consuming it.
+    /// Returns a reference to the next [`Token`].
     const fn peek(&self) -> &Token {
         &self.next_token
     }
@@ -184,5 +115,16 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
                 self.peek().span(),
             );
         }
+    }
+
+    /// Reports a [`Diag`] at a [`Span`].
+    fn report(&mut self, diag: Diag, span: Span) {
+        self.report_recovered(diag, span);
+        self.bump(); // TODO: Replace with panic mode.
+    }
+
+    /// Reports a recovered [`Diag`] at a [`Span`].
+    fn report_recovered(&mut self, diag: Diag, span: Span) {
+        self.lexer.log_mut().report(diag, span);
     }
 }
