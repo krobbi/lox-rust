@@ -1,7 +1,7 @@
 use std::fmt::{self, Formatter};
 
 use crate::{
-    ast::{Ast, Expr, ExprKind, Ident},
+    ast::{Ast, Expr, ExprKind, Ident, UnOp},
     render::{Render, RenderContext},
 };
 
@@ -65,7 +65,7 @@ fn expr_children(expr: &Expr) -> Vec<Node<'_>> {
     match &expr.kind {
         ExprKind::Literal(_) | ExprKind::Variable(_) | ExprKind::This => Vec::new(),
         ExprKind::Super(ident) => vec![Node::Ident(ident)],
-        ExprKind::Paren(expr) => vec![Node::Expr(expr)],
+        ExprKind::Paren(expr) | ExprKind::Unary(_, expr) => vec![Node::Expr(expr)],
     }
 }
 
@@ -95,5 +95,14 @@ fn fmt_expr(expr: &Expr, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> f
         ExprKind::This => write!(f, "This"),
         ExprKind::Super(_) => write!(f, "Super"),
         ExprKind::Paren(_) => write!(f, "Paren"),
+        ExprKind::Unary(op, _) => write!(f, "Unary({})", unary_symbol(*op)),
+    }
+}
+
+/// Returns a [`char`] for displaying a [`UnOp`].
+const fn unary_symbol(op: UnOp) -> char {
+    match op {
+        UnOp::Minus => '-',
+        UnOp::Not => '!',
     }
 }

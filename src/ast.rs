@@ -31,10 +31,23 @@ pub enum ExprKind {
 
     /// A parenthesized [`Expr`].
     Paren(Box<Expr>),
+
+    /// A unary operation.
+    Unary(UnOp, Box<Expr>),
+}
+
+/// A unary operator.
+#[derive(Clone, Copy, Debug)]
+pub enum UnOp {
+    /// An arithmetic negation.
+    Minus,
+
+    /// A logical negation.
+    Not,
 }
 
 /// An identifier [`Symbol`] with a [`Span`].
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Ident {
     /// The [`Symbol`].
     pub symbol: Symbol,

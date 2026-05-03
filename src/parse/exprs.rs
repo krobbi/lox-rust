@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Expr, ExprKind},
+    ast::{Expr, ExprKind, UnOp},
     diagnostics::Diag,
     spans::{BytePos, Span},
     symbols::Symbol,
@@ -11,6 +11,26 @@ use super::Parser;
 impl Parser<'_, '_, '_> {
     /// Parses and returns an [`Expr`].
     pub fn parse_expr(&mut self) -> Expr {
+        self.parse_expr_unary()
+    }
+
+    /// Parses and returns a unary [`Expr`].
+    fn parse_expr_unary(&mut self) -> Expr {
+        let start_pos = self.start_pos();
+
+        let op = match self.peek().token_type() {
+            TokenType::Minus => UnOp::Minus,
+            TokenType::Bang => UnOp::Not,
+            _ => return self.parse_expr_call(),
+        };
+
+        self.bump();
+        let rhs = self.parse_expr_unary();
+        self.make_expr(ExprKind::Unary(op, Box::new(rhs)), start_pos)
+    }
+
+    /// Parses and returns a call [`Expr`].
+    fn parse_expr_call(&mut self) -> Expr {
         self.parse_expr_primary()
     }
 
