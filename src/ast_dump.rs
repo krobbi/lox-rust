@@ -91,7 +91,7 @@ impl Render for Node<'_> {
 /// Returns a [`Stmt`]'s child [`Node`]s.
 fn stmt_children(stmt: &Stmt) -> Vec<Node<'_>> {
     match &stmt.kind {
-        StmtKind::Expr(expr) => vec![Node::Expr(expr)],
+        StmtKind::Print(expr) | StmtKind::Expr(expr) => vec![Node::Expr(expr)],
     }
 }
 
@@ -127,6 +127,7 @@ fn fmt_stmt(stmt: &Stmt, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> f
     write!(f, "[Stmt]{} ", stmt.span.display(ctx))?;
 
     match &stmt.kind {
+        StmtKind::Print(_) => write!(f, "Print"),
         StmtKind::Expr(_) => write!(f, "Expr"),
     }
 }
