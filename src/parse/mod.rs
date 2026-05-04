@@ -69,13 +69,14 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
 
     /// Parses and returns an [`Ident`].
     fn parse_ident(&mut self) -> Ident {
-        let span = self.next_token.span();
+        let start_pos = self.start_pos();
 
         let symbol = if let TokenKind::Ident(symbol) = self.next_token.kind() {
             self.bump();
             symbol
         } else {
             let diag = Diag::UnexpectedToken(TokenType::Ident, self.next_token.kind());
+            let span = self.next_token.span();
 
             if self.next_token.is_keyword() {
                 self.bump();
@@ -87,7 +88,10 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
             Symbol::ERROR
         };
 
-        Ident { symbol, span }
+        Ident {
+            symbol,
+            span: self.span_from(start_pos),
+        }
     }
 
     /// Returns the next [`Token`]'s start [`BytePos`].
@@ -108,8 +112,27 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
 
     /// Consumes the next [`Token`].
     fn bump(&mut self) {
+        debug_assert_ne!(
+            self.peek(),
+            TokenType::Eof,
+            "parser consumed end of file token"
+        );
+
         self.prev_token_end_pos = self.next_token.span().end();
         self.next_token = self.lexer.next_token();
+    }
+
+    /// Consumes the next [`Token`], which should always match an expected
+    /// [`TokenType`]. This function must only be used where it can *never* fail
+    /// to user syntax error.
+    fn bump_assert(&mut self, token_type: TokenType) {
+        debug_assert_eq!(
+            self.peek(),
+            token_type,
+            "parser did not consume expected token type"
+        );
+
+        self.bump();
     }
 
     /// Consumes the next [`Token`] if it matches an expected [`TokenType`].

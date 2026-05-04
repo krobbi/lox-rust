@@ -1,7 +1,7 @@
 use crate::{
     ast::{BinOp, Expr, ExprKind, Ident, LogicOp, UnOp},
     diagnostics::Diag,
-    spans::{BytePos, Span},
+    spans::BytePos,
     symbols::Symbol,
     tokens::{TokenKind, TokenType},
 };
@@ -107,8 +107,8 @@ impl Parser<'_, '_, '_> {
                 ExprKind::This
             }
             kind => {
-                let span = self.next_token.span();
-                return self.error_expr(Diag::ExpectedExpr(kind), span);
+                self.report(Diag::ExpectedExpr(kind), self.next_token.span());
+                ExprKind::Variable(Symbol::ERROR)
             }
         };
 
@@ -117,13 +117,7 @@ impl Parser<'_, '_, '_> {
 
     /// Parses and returns a boxed slice of argument [`Expr`]s.
     fn parse_args(&mut self) -> Box<[Expr]> {
-        debug_assert_eq!(
-            self.peek(),
-            TokenType::OpenParen,
-            "parsed arguments without opening parenthesis"
-        );
-
-        self.bump();
+        self.bump_assert(TokenType::OpenParen);
 
         if self.eat(TokenType::CloseParen) {
             return Box::new([]);
@@ -178,17 +172,6 @@ impl Parser<'_, '_, '_> {
     fn make_expr(&self, kind: ExprKind, start_pos: BytePos) -> Expr {
         let span = self.span_from(start_pos);
         Expr { kind, span }
-    }
-
-    /// Reports a [`Diag`] at a [`Span`] and returns a new synthetic [`Expr`]
-    /// for error recovery.
-    fn error_expr(&mut self, diag: Diag, span: Span) -> Expr {
-        self.report(diag, span);
-
-        Expr {
-            kind: ExprKind::Variable(Symbol::ERROR),
-            span,
-        }
     }
 }
 
