@@ -1,6 +1,5 @@
 use crate::{
     ast::{Stmt, StmtKind},
-    spans::BytePos,
     tokens::TokenType,
 };
 
@@ -15,11 +14,13 @@ impl Parser<'_, '_, '_> {
             TokenType::OpenBrace => self.parse_stmt_block(),
             TokenType::If => self.parse_stmt_if(),
             TokenType::Print => self.parse_stmt_print(),
+            TokenType::Return => self.parse_stmt_return(),
             TokenType::While => self.parse_stmt_while(),
             _ => self.parse_stmt_expr(),
         };
 
-        self.make_stmt(kind, start_pos)
+        let span = self.span_from(start_pos);
+        Stmt { kind, span }
     }
 
     /// Parses and returns a block [`StmtKind`].
@@ -60,6 +61,19 @@ impl Parser<'_, '_, '_> {
         StmtKind::While(Box::new(cond), Box::new(body))
     }
 
+    /// Parses and returns a return [`StmtKind`].
+    fn parse_stmt_return(&mut self) -> StmtKind {
+        self.bump_assert(TokenType::Return);
+
+        let value = (!self.eat(TokenType::Semi)).then(|| {
+            let value = self.parse_expr();
+            self.expect(TokenType::Semi);
+            Box::new(value)
+        });
+
+        StmtKind::Return(value)
+    }
+
     /// Parses and returns a print [`StmtKind`].
     fn parse_stmt_print(&mut self) -> StmtKind {
         self.bump_assert(TokenType::Print);
@@ -73,11 +87,5 @@ impl Parser<'_, '_, '_> {
         let expr = self.parse_expr();
         self.expect(TokenType::Semi);
         StmtKind::Expr(Box::new(expr))
-    }
-
-    /// Returns a new [`Stmt`] from a [`StmtKind`] and a start [`BytePos`].
-    fn make_stmt(&self, kind: StmtKind, start_pos: BytePos) -> Stmt {
-        let span = self.span_from(start_pos);
-        Stmt { kind, span }
     }
 }

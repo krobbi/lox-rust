@@ -100,17 +100,18 @@ fn stmt_children(stmt: &Stmt) -> Vec<Node<'_>> {
 
             children
         }
-        StmtKind::If(cond, then_stmt, else_stmt) => {
-            let mut children = vec![Node::Expr(cond), Node::Stmt(then_stmt)];
-
-            if let Some(else_stmt) = else_stmt {
-                children.push(Node::Stmt(else_stmt));
-            }
-
-            children
+        StmtKind::If(cond, then_stmt, Some(else_stmt)) => vec![
+            Node::Expr(cond),
+            Node::Stmt(then_stmt),
+            Node::Stmt(else_stmt),
+        ],
+        StmtKind::If(cond, body, None) | StmtKind::While(cond, body) => {
+            vec![Node::Expr(cond), Node::Stmt(body)]
         }
-        StmtKind::While(cond, body) => vec![Node::Expr(cond), Node::Stmt(body)],
-        StmtKind::Print(expr) | StmtKind::Expr(expr) => vec![Node::Expr(expr)],
+        StmtKind::Return(None) => Vec::new(),
+        StmtKind::Return(Some(expr)) | StmtKind::Print(expr) | StmtKind::Expr(expr) => {
+            vec![Node::Expr(expr)]
+        }
     }
 }
 
@@ -149,6 +150,7 @@ fn fmt_stmt(stmt: &Stmt, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> f
         StmtKind::Block(_) => write!(f, "Block"),
         StmtKind::If(_, _, _) => write!(f, "If"),
         StmtKind::While(_, _) => write!(f, "While"),
+        StmtKind::Return(_) => write!(f, "Return"),
         StmtKind::Print(_) => write!(f, "Print"),
         StmtKind::Expr(_) => write!(f, "Expr"),
     }

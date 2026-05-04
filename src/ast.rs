@@ -26,6 +26,9 @@ pub enum StmtKind {
     /// A while loop.
     While(Box<Expr>, Box<Stmt>),
 
+    /// A return.
+    Return(Option<Box<Expr>>),
+
     /// A print.
     Print(Box<Expr>),
 
