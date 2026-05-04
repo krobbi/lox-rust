@@ -15,9 +15,6 @@ pub enum Diag {
     /// A string literal without a terminating quote was encountered.
     UnterminatedString,
 
-    /// A number literal with a trailing decimal point was encountered.
-    TrailingDecimal,
-
     /// A [`TokenKind`] which does not match an expected [`TokenType`] was
     /// encountered.
     UnexpectedToken(TokenType, TokenKind),
@@ -35,10 +32,6 @@ impl Render for Diag {
         match self {
             Self::UnexpectedChar(char) => write!(f, "Unexpected character {char:?}."),
             Self::UnterminatedString => write!(f, "This string has no terminating '\"'."),
-            Self::TrailingDecimal => write!(
-                f,
-                "This number has a trailing '.' - remove it or add a trailing '0'."
-            ),
             Self::ExpectedExpr(kind) => {
                 write!(f, "Expected an expression, found {}.", kind.display(ctx))
             }

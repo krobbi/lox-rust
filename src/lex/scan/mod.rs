@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 use std::str::Chars;
 
 /// A structure which reads a stream of [`char`]s from source code.
@@ -44,6 +47,14 @@ impl<'src> Scanner<'src> {
     /// [`None`] if the `Scanner` is at the end of source code.
     pub fn peek(&self) -> Option<char> {
         self.chars.clone().next()
+    }
+
+    /// Returns the next pair of [`char`]s without consuming them. This function
+    /// returns [`None`] for a [`char`] if the `Scanner` is at the end of source
+    /// code.
+    pub fn peek_pair(&self) -> (Option<char>, Option<char>) {
+        let mut chars = self.chars.clone();
+        (chars.next(), chars.next())
     }
 
     /// Consumes and returns the next [`char`]. This function returns [`None`]

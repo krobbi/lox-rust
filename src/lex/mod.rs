@@ -140,23 +140,16 @@ impl<'src, 'sym, 'log> Lexer<'src, 'sym, 'log> {
     fn next_number(&mut self) -> TokenKind {
         self.scanner.eat_while(is_char_digit);
 
-        // NOTE: Lox specifies that a trailing decimal point should be lexed as
-        // a separate dot token. This is technically a breaking change, but it
-        // allows the lexer to use single-character lookahead. Additionally, a
-        // number of the left-hand side of a dot operator is always a type
-        // error.
-        if self.scanner.eat('.') {
-            if !self.is_digit_next() {
-                let start = self.pos + (self.scanner.lexeme_length() - 1);
-                let end = start + 1;
-                let span = Span::new(start, end);
-                self.log.report(Diag::TrailingDecimal, span);
-            }
-
+        if matches!(self.scanner.peek_pair(), (Some('.'), Some(c)) if is_char_digit(c)) {
+            self.scanner.bump();
             self.scanner.eat_while(is_char_digit);
         }
 
-        self.number_from_lexeme()
+        // The lexeme follows this grammar, so parsing should never fail:
+        // https://doc.rust-lang.org/std/primitive.f64.html#grammar
+        let value = self.scanner.lexeme();
+        let value = value.parse().expect("lexeme should be a valid float");
+        TokenKind::Literal(Literal::Number(value))
     }
 
     /// Returns the next string literal [`TokenKind`] after consuming its
@@ -181,20 +174,6 @@ impl<'src, 'sym, 'log> Lexer<'src, 'sym, 'log> {
     /// equals sign [`char`] is consumed.
     fn next_digraph(&mut self, short: TokenKind, long: TokenKind) -> TokenKind {
         if self.scanner.eat('=') { long } else { short }
-    }
-
-    /// Returns [`true`] if the next [`char`] is a digit.
-    fn is_digit_next(&self) -> bool {
-        matches!(self.scanner.peek(), Some(c) if is_char_digit(c))
-    }
-
-    /// Returns a new number [`TokenKind`] from the current lexeme.
-    fn number_from_lexeme(&self) -> TokenKind {
-        // At this point, the current lexeme must follow this grammar:
-        // https://doc.rust-lang.org/std/primitive.f64.html#grammar
-        let value = self.scanner.lexeme();
-        let value = value.parse().expect("lexeme should be a valid float");
-        TokenKind::Literal(Literal::Number(value))
     }
 }
 
