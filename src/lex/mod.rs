@@ -79,19 +79,7 @@ impl<'src, 'sym, 'log> Lexer<'src, 'sym, 'log> {
             '{' => TokenKind::OpenBrace,
             '}' => TokenKind::CloseBrace,
             ',' => TokenKind::Comma,
-            '.' => {
-                if self.is_digit_next() {
-                    let start = self.pos;
-                    let end = start;
-                    let span = Span::new(start, end);
-                    self.log.report(Diag::LeadingDecimal, span);
-
-                    self.scanner.eat_while(is_char_digit);
-                    self.number_from_lexeme()
-                } else {
-                    TokenKind::Dot
-                }
-            }
+            '.' => TokenKind::Dot,
             '-' => TokenKind::Minus,
             '+' => TokenKind::Plus,
             ';' => TokenKind::Semi,
