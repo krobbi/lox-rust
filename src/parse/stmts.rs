@@ -12,11 +12,26 @@ impl Parser<'_, '_, '_> {
         let start_pos = self.start_pos();
 
         let kind = match self.peek() {
+            TokenType::OpenBrace => self.parse_stmt_block(),
             TokenType::Print => self.parse_stmt_print(),
             _ => self.parse_stmt_expr(),
         };
 
         self.make_stmt(kind, start_pos)
+    }
+
+    /// Parses and returns a block [`StmtKind`].
+    fn parse_stmt_block(&mut self) -> StmtKind {
+        self.bump_assert(TokenType::OpenBrace);
+        let mut decls = Vec::new();
+
+        while !matches!(self.peek(), TokenType::Eof | TokenType::CloseBrace) {
+            let decl = self.parse_decl();
+            decls.push(decl);
+        }
+
+        self.expect(TokenType::CloseBrace);
+        StmtKind::Block(decls.into_boxed_slice())
     }
 
     /// Parses and returns a print [`StmtKind`].

@@ -17,6 +17,9 @@ pub struct Stmt {
 /// A [`Stmt`]'s kind.
 #[derive(Debug)]
 pub enum StmtKind {
+    /// A block.
+    Block(Box<[Stmt]>),
+
     /// A print.
     Print(Box<Expr>),
 
