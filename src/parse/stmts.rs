@@ -13,6 +13,7 @@ impl Parser<'_, '_, '_> {
 
         let kind = match self.peek() {
             TokenType::OpenBrace => self.parse_stmt_block(),
+            TokenType::If => self.parse_stmt_if(),
             TokenType::Print => self.parse_stmt_print(),
             _ => self.parse_stmt_expr(),
         };
@@ -32,6 +33,20 @@ impl Parser<'_, '_, '_> {
 
         self.expect(TokenType::CloseBrace);
         StmtKind::Block(decls.into_boxed_slice())
+    }
+
+    /// Parses and returns an if [`StmtKind`].
+    fn parse_stmt_if(&mut self) -> StmtKind {
+        self.bump_assert(TokenType::If);
+        self.expect(TokenType::OpenParen);
+        let cond = self.parse_expr();
+        self.expect(TokenType::CloseParen);
+        let then_stmt = self.parse_stmt();
+        let else_stmt = self
+            .eat(TokenType::Else)
+            .then(|| Box::new(self.parse_stmt()));
+
+        StmtKind::If(Box::new(cond), Box::new(then_stmt), else_stmt)
     }
 
     /// Parses and returns a print [`StmtKind`].

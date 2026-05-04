@@ -20,6 +20,9 @@ pub enum StmtKind {
     /// A block.
     Block(Box<[Stmt]>),
 
+    /// A conditional branch.
+    If(Box<Expr>, Box<Stmt>, Option<Box<Stmt>>),
+
     /// A print.
     Print(Box<Expr>),
 
