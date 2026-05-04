@@ -23,6 +23,9 @@ pub enum StmtKind {
     /// A conditional branch.
     If(Box<Expr>, Box<Stmt>, Option<Box<Stmt>>),
 
+    /// A while loop.
+    While(Box<Expr>, Box<Stmt>),
+
     /// A print.
     Print(Box<Expr>),
 

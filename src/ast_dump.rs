@@ -109,6 +109,7 @@ fn stmt_children(stmt: &Stmt) -> Vec<Node<'_>> {
 
             children
         }
+        StmtKind::While(cond, body) => vec![Node::Expr(cond), Node::Stmt(body)],
         StmtKind::Print(expr) | StmtKind::Expr(expr) => vec![Node::Expr(expr)],
     }
 }
@@ -147,6 +148,7 @@ fn fmt_stmt(stmt: &Stmt, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> f
     match &stmt.kind {
         StmtKind::Block(_) => write!(f, "Block"),
         StmtKind::If(_, _, _) => write!(f, "If"),
+        StmtKind::While(_, _) => write!(f, "While"),
         StmtKind::Print(_) => write!(f, "Print"),
         StmtKind::Expr(_) => write!(f, "Expr"),
     }
