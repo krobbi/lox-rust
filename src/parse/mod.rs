@@ -75,15 +75,10 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
             self.bump();
             symbol
         } else {
-            let diag = Diag::UnexpectedToken(TokenType::Ident, self.next_token.kind());
-            let span = self.next_token.span();
-
-            if self.next_token.is_keyword() {
-                self.bump();
-                self.report_recovered(diag, span);
-            } else {
-                self.report(diag, span);
-            }
+            self.report(
+                Diag::UnexpectedToken(TokenType::Ident, self.next_token.kind()),
+                self.next_token.span(),
+            );
 
             Symbol::ERROR
         };

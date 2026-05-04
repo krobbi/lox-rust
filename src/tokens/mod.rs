@@ -93,27 +93,6 @@ impl Token {
         Self { kind, span }
     }
 
-    /// Returns [`true`] if the `Token` is a keyword.
-    pub const fn is_keyword(&self) -> bool {
-        matches!(
-            self.kind,
-            TokenKind::Literal(Literal::Nil | Literal::Bool(_))
-                | TokenKind::And
-                | TokenKind::Class
-                | TokenKind::Else
-                | TokenKind::For
-                | TokenKind::Fun
-                | TokenKind::If
-                | TokenKind::Or
-                | TokenKind::Print
-                | TokenKind::Return
-                | TokenKind::Super
-                | TokenKind::This
-                | TokenKind::Var
-                | TokenKind::While
-        )
-    }
-
     /// Returns the `Token`'s [`TokenKind`].
     pub const fn kind(&self) -> TokenKind {
         self.kind
