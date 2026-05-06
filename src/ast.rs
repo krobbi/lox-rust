@@ -140,11 +140,11 @@ pub enum LogicOp {
     Or,
 }
 
-/// An identifier [`Symbol`] with a [`Span`].
+/// An identifier with a [`Span`].
 #[derive(Clone, Copy, Debug)]
 pub struct Ident {
-    /// The [`Symbol`].
-    pub symbol: Symbol,
+    /// The name [`Symbol`].
+    pub name: Symbol,
 
     /// The [`Span`].
     pub span: Span,

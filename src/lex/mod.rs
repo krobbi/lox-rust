@@ -131,7 +131,10 @@ impl<'src, 'sym, 'log> Lexer<'src, 'sym, 'log> {
             "true" => TokenKind::Literal(Literal::Bool(true)),
             "var" => TokenKind::Var,
             "while" => TokenKind::While,
-            name => TokenKind::Ident(self.symbols.intern(name)),
+            name => {
+                let name = self.symbols.intern(name);
+                TokenKind::Ident(name)
+            }
         }
     }
 
@@ -167,7 +170,8 @@ impl<'src, 'sym, 'log> Lexer<'src, 'sym, 'log> {
             self.log.report(Diag::UnterminatedString, span);
         }
 
-        TokenKind::Literal(Literal::String(self.symbols.intern(value)))
+        let value = self.symbols.intern(value);
+        TokenKind::Literal(Literal::String(value))
     }
 
     /// Returns the next short or long [`TokenKind`] depending on whether an

@@ -86,9 +86,9 @@ impl Parser<'_, '_, '_> {
                 self.bump();
                 ExprKind::Literal(literal)
             }
-            TokenKind::Ident(symbol) => {
+            TokenKind::Ident(name) => {
                 self.bump();
-                ExprKind::Variable(symbol)
+                ExprKind::Variable(name)
             }
             TokenKind::OpenParen => {
                 self.bump();
@@ -149,9 +149,9 @@ impl Parser<'_, '_, '_> {
     /// [`BytePos`].
     fn make_assign_expr(&mut self, lhs: Expr, rhs: Expr, start_pos: BytePos) -> Expr {
         let kind = match lhs.kind {
-            ExprKind::Variable(symbol) => ExprKind::AssignVar(
+            ExprKind::Variable(name) => ExprKind::AssignVar(
                 Ident {
-                    symbol,
+                    name,
                     span: lhs.span,
                 },
                 Box::new(rhs),

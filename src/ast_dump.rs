@@ -82,7 +82,7 @@ impl Render for Node<'_> {
                 f,
                 "[Ident]{} {}",
                 ident.span.display(ctx),
-                ident.symbol.display(ctx)
+                ident.name.display(ctx)
             ),
         }
     }
@@ -165,7 +165,7 @@ fn fmt_expr(expr: &Expr, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> f
         ExprKind::AssignVar(_, _) => write!(f, "AssignVar"),
         ExprKind::AssignField(_, _, _) => write!(f, "AssignField"),
         ExprKind::Literal(literal) => write!(f, "Literal({})", literal.display(ctx)),
-        ExprKind::Variable(symbol) => write!(f, "Variable({})", symbol.display(ctx)),
+        ExprKind::Variable(name) => write!(f, "Variable({})", name.display(ctx)),
         ExprKind::Property(_, _) => write!(f, "Property"),
         ExprKind::This => write!(f, "This"),
         ExprKind::Super(_) => write!(f, "Super"),

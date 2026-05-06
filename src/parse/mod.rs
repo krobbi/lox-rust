@@ -71,9 +71,9 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
     fn parse_ident(&mut self) -> Ident {
         let start_pos = self.start_pos();
 
-        let symbol = if let TokenKind::Ident(symbol) = self.next_token.kind() {
+        let name = if let TokenKind::Ident(name) = self.next_token.kind() {
             self.bump();
-            symbol
+            name
         } else {
             self.report(
                 Diag::UnexpectedToken(TokenType::Ident, self.next_token.kind()),
@@ -84,7 +84,7 @@ impl<'src, 'sym, 'log> Parser<'src, 'sym, 'log> {
         };
 
         Ident {
-            symbol,
+            name,
             span: self.span_from(start_pos),
         }
     }
