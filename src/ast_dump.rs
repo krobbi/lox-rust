@@ -3,6 +3,7 @@ use std::fmt::{self, Formatter};
 use crate::{
     ast::{Ast, BinOp, Expr, ExprKind, Ident, LogicOp, Stmt, StmtKind, UnOp},
     render::{Render, RenderContext},
+    spans::Span,
 };
 
 /// Prints an [`Ast`] with a [`RenderContext`].
@@ -36,7 +37,7 @@ fn print_node(node: Node<'_>, ctx: RenderContext<'_, '_>, flags: &mut Vec<bool>)
     }
 }
 
-/// An [`Ast`] node.
+/// A reference to an [`Ast`] node.
 #[derive(Clone, Copy, Debug)]
 enum Node<'ast> {
     /// An [`Ast`].
@@ -53,6 +54,17 @@ enum Node<'ast> {
 }
 
 impl Node<'_> {
+    /// Returns the `Node`'s [`Span`]. This function returns [`None`] if the
+    /// `Node` has no [`Span`].
+    const fn span(self) -> Option<Span> {
+        match self {
+            Self::Ast(_) => None,
+            Self::Stmt(Stmt { span, .. })
+            | Self::Expr(Expr { span, .. })
+            | Self::Ident(Ident { span, .. }) => Some(*span),
+        }
+    }
+
     /// Returns the `Node`'s child `Node`s.
     fn children(self) -> Vec<Self> {
         match self {
@@ -74,16 +86,18 @@ impl Node<'_> {
 
 impl Render for Node<'_> {
     fn fmt(&self, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
+        let result = match self {
             Self::Ast(_) => write!(f, "[Ast]"),
-            Self::Stmt(stmt) => fmt_stmt(stmt, ctx, f),
+            Self::Stmt(stmt) => write!(f, "[Stmt] {}", stmt_name(stmt)),
             Self::Expr(expr) => fmt_expr(expr, ctx, f),
-            Self::Ident(ident) => write!(
-                f,
-                "[Ident]{} {}",
-                ident.span.display(ctx),
-                ident.name.display(ctx)
-            ),
+            Self::Ident(ident) => write!(f, "[Ident] {}", ident.name.display(ctx)),
+        };
+
+        if let Some(span) = self.span() {
+            result?;
+            write!(f, " {}", span.display(ctx))
+        } else {
+            result
         }
     }
 }
@@ -141,25 +155,54 @@ fn expr_children(expr: &Expr) -> Vec<Node<'_>> {
     }
 }
 
-/// Formats a [`Stmt`] with a [`RenderContext`] and a [`Formatter`]. This
-/// function returns a [`fmt::Error`] if a formatting error occurred.
-fn fmt_stmt(stmt: &Stmt, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> fmt::Result {
-    write!(f, "[Stmt]{} ", stmt.span.display(ctx))?;
-
+/// Returns a [`Stmt`]'s name.
+const fn stmt_name(stmt: &Stmt) -> &'static str {
     match &stmt.kind {
-        StmtKind::Block(_) => write!(f, "Block"),
-        StmtKind::If(_, _, _) => write!(f, "If"),
-        StmtKind::While(_, _) => write!(f, "While"),
-        StmtKind::Return(_) => write!(f, "Return"),
-        StmtKind::Print(_) => write!(f, "Print"),
-        StmtKind::Expr(_) => write!(f, "Expr"),
+        StmtKind::Block(_) => "Block",
+        StmtKind::If(_, _, _) => "If",
+        StmtKind::While(_, _) => "While",
+        StmtKind::Return(_) => "Return",
+        StmtKind::Print(_) => "Print",
+        StmtKind::Expr(_) => "Expr",
+    }
+}
+
+/// Returns a [`UnOp`]'s name.
+const fn un_op_name(op: UnOp) -> &'static str {
+    match op {
+        UnOp::Minus => "Minus",
+        UnOp::Not => "Not",
+    }
+}
+
+/// Returns a [`BinOp`]'s name.
+const fn bin_op_name(op: BinOp) -> &'static str {
+    match op {
+        BinOp::Add => "Add",
+        BinOp::Subtract => "Subtract",
+        BinOp::Multiply => "Multiply",
+        BinOp::Divide => "Divide",
+        BinOp::Equal => "Equal",
+        BinOp::NotEqual => "NotEqual",
+        BinOp::Greater => "Greater",
+        BinOp::GreaterEqual => "GreaterEqual",
+        BinOp::Less => "Less",
+        BinOp::LessEqual => "LessEqual",
+    }
+}
+
+/// Returns a [`LogicOp`]'s name.
+const fn logic_op_name(op: LogicOp) -> &'static str {
+    match op {
+        LogicOp::And => "And",
+        LogicOp::Or => "Or",
     }
 }
 
 /// Formats an [`Expr`] with a [`RenderContext`] and a [`Formatter`]. This
 /// function returns a [`fmt::Error`] if a formatting error occurred.
 fn fmt_expr(expr: &Expr, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> fmt::Result {
-    write!(f, "[Expr]{} ", expr.span.display(ctx))?;
+    write!(f, "[Expr] ")?;
 
     match &expr.kind {
         ExprKind::AssignVar(_, _) => write!(f, "AssignVar"),
@@ -170,41 +213,9 @@ fn fmt_expr(expr: &Expr, ctx: RenderContext<'_, '_>, f: &mut Formatter<'_>) -> f
         ExprKind::This => write!(f, "This"),
         ExprKind::Super(_) => write!(f, "Super"),
         ExprKind::Paren(_) => write!(f, "Paren"),
-        ExprKind::Unary(op, _) => write!(f, "Unary({})", unary_symbol(*op)),
-        ExprKind::Binary(op, _, _) => write!(f, "Binary({})", binary_symbol(*op)),
-        ExprKind::Logic(op, _, _) => write!(f, "Logic({})", logic_symbol(*op)),
+        ExprKind::Unary(op, _) => write!(f, "Unary({})", un_op_name(*op)),
+        ExprKind::Binary(op, _, _) => write!(f, "Binary({})", bin_op_name(*op)),
+        ExprKind::Logic(op, _, _) => write!(f, "Logic({})", logic_op_name(*op)),
         ExprKind::Call(_, _) => write!(f, "Call"),
-    }
-}
-
-/// Returns a [`char`] for displaying a [`UnOp`].
-const fn unary_symbol(op: UnOp) -> char {
-    match op {
-        UnOp::Minus => '-',
-        UnOp::Not => '!',
-    }
-}
-
-/// Returns a string slice for displaying a [`BinOp`].
-const fn binary_symbol(op: BinOp) -> &'static str {
-    match op {
-        BinOp::Add => "+",
-        BinOp::Subtract => "-",
-        BinOp::Multiply => "*",
-        BinOp::Divide => "/",
-        BinOp::Equal => "==",
-        BinOp::NotEqual => "!=",
-        BinOp::Greater => ">",
-        BinOp::GreaterEqual => ">=",
-        BinOp::Less => "<",
-        BinOp::LessEqual => "<=",
-    }
-}
-
-/// Returns a string slice for displaying a [`LogicOp`].
-const fn logic_symbol(op: LogicOp) -> &'static str {
-    match op {
-        LogicOp::And => "and",
-        LogicOp::Or => "or",
     }
 }
